@@ -215,7 +215,7 @@ Response:
 ```json
 <HTTP STATUS CODE 200>
 {
-    "data": [
+    "rooms": [
         {
             "dorm": "Flora Rose House",
             "room_number": "042",
