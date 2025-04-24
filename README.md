@@ -8,7 +8,7 @@
   2. After successful OAuth, server generates a JWT for subsequent requests
   3. Client includes JWT in Authorization header for all API calls
 
-- **How JWT  works with OAuth**:
+- **How JWT works with OAuth**:
   - OAuth handles initial authentication (proving you're a Cornell user)
   - JWTs handles subsequent requests (maintaining session state)
   - Prevents having to re-authenticate with Google for every API call
@@ -57,14 +57,53 @@ Turns into: eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiMTIzIiwiZW1haWwiOiJuZXRpZEBjb3J
 ```
 ## 1. Authentication
 
-### 1.1 Cornell OAuth Login
-**GET** `/api/auth/cornell/login`
+### 1.1 Cornell Authentication
+**GET** `/api/auth/cornell`
 - Redirects to Cornell Google OAuth consent screen
 - Automatically restricts to @cornell.edu domain
+- Handles both new and returning users
 
-**GET** `/api/auth/cornell/callback`
+**POST** `/api/auth/cornell/callback`
 
-Response:
+Request (Only required for new users):
+```json
+{
+    "class_year": 2028,
+    "current_room": {
+        "dorm": "Keeton House",
+        "room_number": "314",
+        "occupancy": 2,
+        "amenities": ["private bathroom", "lake view"],
+        "description": "Sunny double on 3rd floor"
+    },
+    "is_room_listed": false
+}
+```
+
+Response (New User):
+```json
+<HTTP STATUS CODE 201>
+{
+    "token": "<jwt>",
+    "user": {
+        "id": "uuid",
+        "email": "bc44@cornell.edu",
+        "full_name": "Bombardino Crocodilo",  // from Google OAuth
+        "class_year": 2028,
+        "created_at": "2025-04-23T19:15:00Z",
+        "current_room": {
+            "dorm": "Keeton House",
+            "room_number": "314",
+            "occupancy": 2,
+            "amenities": ["private bathroom", "lake view"],
+            "description": "Sunny double on 3rd floor"
+        },
+        "is_room_listed": false
+    }
+}
+```
+
+Response (Returning User):
 ```json
 <HTTP STATUS CODE 200>
 {
@@ -85,6 +124,8 @@ Response:
     }
 }
 ```
+
+Note: System determines if user is new based on Cornell email from OAuth. New users must provide additional information in callback request.
 
 ### 1.2 Register User
 **POST** `/api/auth/register`
@@ -154,7 +195,6 @@ Response:
         "room_number": "314",
         "occupancy": 2,
         "amenities": ["gorge view"],
-        "photos": ["https://…/ai-placeholder.jpg"],
         "description": "Top floor single overlooking the gorge"
     },
     "is_room_listed": true
@@ -168,7 +208,7 @@ Request:
 ```json
 {
     "dorm": "Keeton House",
-    "room_number": "B-314",
+    "room_number": "314",
     "occupancy": 2,
     "amenities": ["private bathroom", "lake view"],
     "description": "Sunny double on 3rd floor"
@@ -180,7 +220,7 @@ Response:
 <HTTP STATUS CODE 200>
 {
     "dorm": "Keeton House",
-    "room_number": "B-314",
+    "room_number": "314",
     "occupancy": 2,
     "amenities": ["private bathroom", "lake view"],
     "description": "Sunny double on 3rd floor",
