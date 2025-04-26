@@ -7,6 +7,15 @@ db = SQLAlchemy()
 
 
 class Room(db.Model):
+    """
+    Room model representing a dorm room in the Cornell housing system.
+    dorm (str): Name of the dormitory building
+    room_number (str): Room identifier within the building
+    occupancy (int): Number of students the room can accommodate
+    amenities (str): JSON-encoded list of room amenities
+    description (str): Optional description of the room
+    owner_id (int): Foreign key to the user who owns this room
+    """
     __tablename__ = "rooms"
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -40,8 +49,16 @@ class Room(db.Model):
             "description": self.description,
         }
 
-
 class User(db.Model):
+    """
+    User model representing a Cornell student in the room swap system.
+    email (str): Cornell email address (@cornell.edu)
+    full_name (str): User's full name from Google OAuth
+    class_year (int): Expected graduation year
+    is_room_listed (bool): Whether user's room is available for swaps
+    auto_reject_triple (bool): Preference for triple room offers
+    room (Room): One-to-one relationship with Room model
+    """
     __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
