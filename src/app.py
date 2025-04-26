@@ -5,15 +5,22 @@ from datetime import datetime, timedelta, timezone
 import jwt
 from flask import Flask, request
 from dotenv import load_dotenv
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
 
 from db import db, User, Room
 
+# Environment Stuff
 load_dotenv()
 
+if not os.environ.get("GOOGLE_CLIENT_ID"):
+    raise RuntimeError("GOOGLE_CLIENT_ID missing from .env")
+
 app = Flask(__name__)
-app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY")
+app.config["GOOGLE_CLIENT_ID"] = os.environ["GOOGLE_CLIENT_ID"]
 JWT_EXP_HOURS = int(os.environ.get("JWT_EXP_HOURS", 24))
 
+# SQLAlchemy Stuff
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///dormhop.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SQLALCHEMY_ECHO"] = True
@@ -22,36 +29,35 @@ db.init_app(app)
 with app.app_context():
     db.create_all()
 
-
+# JWT helpers
 def encode_token(user):
     """
     Return a signed JWT for a user.
     """
-    payload = {
+    output = {
         "user_id": user.id,
         "email": user.email,
         "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_EXP_HOURS),
     }
-    return jwt.encode(payload, app.config["SECRET_KEY"], algorithm="HS256")
+    return jwt.encode(output, app.config["SECRET_KEY"], algorithm="HS256")
 
 
 def decode_token(token):
     """
-    Decode JWT. Returns None if token is invalid or expired.
+    Decode JWT or return None if invalid/expired.
     """
     try:
         return jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
     except jwt.InvalidTokenError:
         return None
 
-
+# Decorator
 def auth_required(view_fn):
     """
-    Wraps functions to add behaviors outlined below:
-    1.  Makes sure request carries a valid JWT in its Authorization header.  
-    2.  Look up the corresponding user in DB.
-    3.  Call the orig view with user obj. as first arg
-     """
+    1. Checks for Bearer <JWT> in Authorization header.
+    2. Validates the token and loads the user.
+    3. Passes the user as first arg to the wrapped view.
+    """
     def wrapper(*args, **kwargs):
         header = request.headers.get("Authorization", "")
         if not header.startswith("Bearer "):
@@ -71,48 +77,38 @@ def auth_required(view_fn):
     wrapper.__name__ = view_fn.__name__
     return wrapper
 
-
-# Auth endpoints
-@app.route("/api/auth/cornell", methods=["GET"])
-def cornell_auth():
+# ID-token verification route
+@app.route("/api/auth/verify_id_token", methods=["POST"])
+def verify_id_token():
     """
-    Placeholder for the Cornell Google OAuth redirect.
-    """
-    return json.dumps({"message": "Redirect to Cornell OAuth consent screen here"}), 200
-
-
-@app.route("/api/auth/cornell/callback", methods=["POST"])
-def cornell_callback():
-    """
-    Accept email and full_name from OAuth. Create the user if new,
-    otherwise return the existing user.
+    Android sends {"id_token": "<google-id-token>"}.
+    Backend verifies it, then issues its own JWT.
     """
     data = request.get_json(force=True) or {}
-    email, full_name = data.get("email"), data.get("full_name")
-    if not email or not full_name:
-        return json.dumps({"error": "'email' and 'full_name' are required"}), 400
+    id_token_str = data.get("id_token")
+    if not id_token_str:
+        return json.dumps({"error": "id_token required"}), 400
+
+    try:
+        info = id_token.verify_oauth2_token(
+            id_token_str,
+            google_requests.Request(),
+            app.config["GOOGLE_CLIENT_ID"],
+        )
+    except ValueError:
+        return json.dumps({"error": "Invalid Google ID token"}), 401
+
+    if info.get("hd") and info["hd"] != "cornell.edu":
+        return json.dumps({"error": "Cornell account required"}), 403
+
+    email = info["email"]
+    full_name = info.get("name", "")
 
     user = User.query.filter_by(email=email).first()
     is_new = False
-
     if not user:
-        class_year = data.get("class_year")
-        if class_year is None:
-            return json.dumps({"error": "New users must supply 'class_year'"}), 400
-
-        user = User(
-            email=email,
-            full_name=full_name,
-            class_year=class_year,
-            is_room_listed=data.get("is_room_listed", False),
-        )
+        user = User(email=email, full_name=full_name, class_year=9999)
         db.session.add(user)
-        db.session.flush()
-
-        if (room_data := data.get("current_room")):
-            room_data["owner_id"] = user.id
-            db.session.add(Room(**room_data))
-
         db.session.commit()
         is_new = True
 
@@ -120,37 +116,33 @@ def cornell_callback():
     status = 201 if is_new else 200
     return json.dumps({"token": token, "user": user.serialize()}), status
 
+# Route for testing
+# @app.route("/api/auth/register", methods=["POST"])
+# def register_user():
+#     """Dev-only registration that skips Google sign-in."""
+#     data = request.get_json(force=True) or {}
+#     required = {"email", "full_name", "class_year"}
+#     if not required.issubset(data):
+#         return json.dumps({"error": "email, full_name, class_year are mandatory"}), 400
+#     if User.query.filter_by(email=data["email"]).first():
+#         return json.dumps({"error": "email already registered"}), 400
 
-@app.route("/api/auth/register", methods=["POST"])
-def register_user():
-    """
-    Dev-only registration that skips OAuth.
-    """
-    data = request.get_json(force=True) or {}
-    required = {"email", "full_name", "class_year"}
-    if not required.issubset(data):
-        return json.dumps({"error": "email, full_name, class_year are mandatory"}), 400
+#     user = User(
+#         email=data["email"],
+#         full_name=data["full_name"],
+#         class_year=data["class_year"],
+#         is_room_listed=data.get("is_room_listed", False),
+#     )
+#     db.session.add(user)
+#     db.session.flush()
 
-    if User.query.filter_by(email=data["email"]).first():
-        return json.dumps({"error": "email already registered"}), 400
+#     if (room_data := data.get("current_room")):
+#         room_data["owner_id"] = user.id
+#         db.session.add(Room(**room_data))
 
-    user = User(
-        email=data["email"],
-        full_name=data["full_name"],
-        class_year=data["class_year"],
-        is_room_listed=data.get("is_room_listed", False),
-    )
-    db.session.add(user)
-    db.session.flush()
-
-    if (room_data := data.get("current_room")):
-        room_data["owner_id"] = user.id
-        db.session.add(Room(**room_data))
-
-    db.session.commit()
-    token = encode_token(user)
-    return json.dumps({"token": token, "user": user.serialize()}), 201
-
+#     db.session.commit()
+#     token = encode_token(user)
+#     return json.dumps({"token": token, "user": user.serialize()}), 201
 
 # User endpoints
 @app.route("/api/users/me", methods=["GET"])

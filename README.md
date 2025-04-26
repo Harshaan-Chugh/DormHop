@@ -56,118 +56,56 @@ Example:
 Turns into: eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiMTIzIiwiZW1haWwiOiJuZXRpZEBjb3JuZWxsLmVkdSIsImV4cCI6MTY4MjUwNjg3NH0.ABC123signature
 ```
 ## 1. Authentication
+**POST** `/api/auth/verify_id_token`
+Purpose
+-------
+Android sends a Google **ID-token** (obtained from Google Sign-In).
+The backend verifies the token, creates the user if they don’t exist,
+and returns a DormHop JWT.
 
-### 1.1 Cornell Authentication
-**GET** `/api/auth/cornell`
-- Redirects to Cornell Google OAuth consent screen
-- Automatically restricts to @cornell.edu domain
-- Handles both new and returning users
+Headers
+-------
+Content-Type: application/json
 
-**POST** `/api/auth/cornell/callback`
-
-Request (Only required for new users):
-```json
+Request Body:
+```
 {
-    "class_year": 2028,
-    "current_room": {
-        "dorm": "Keeton House",
-        "room_number": "314",
-        "occupancy": 2,
-        "amenities": ["private bathroom", "lake view"],
-        "description": "Sunny double on 3rd floor"
-    },
+  "id_token": "ya29.A0ARrdaMxyz...<google-id-token>..."
+}
+```
+
+Responses:
+```
+1. 201 Created  — first-time Cornell user
+2. 200 OK       — returning user
+```
+
+Body that server returns: Both Cases but hopefully room and all is set at creation of user!!!:
+```
+{
+  "token": "<dormhop-jwt>",
+  "user": {
+    "id": "uuid",
+    "email": "netid@cornell.edu",
+    "full_name": "User Name",
+    "class_year": 9999,          // placeholder if unknown
+    "created_at": "2025-04-23T19:15:00Z",
+    "current_room": null,        // or room object if already set
     "is_room_listed": false
+  }
 }
 ```
 
-Response (New User):
-```json
-<HTTP STATUS CODE 201>
-{
-    "token": "<jwt>",
-    "user": {
-        "id": "uuid",
-        "email": "bc44@cornell.edu",
-        "full_name": "Bombardino Crocodilo",  // from Google OAuth
-        "class_year": 2028,
-        "created_at": "2025-04-23T19:15:00Z",
-        "current_room": {
-            "dorm": "Keeton House",
-            "room_number": "314",
-            "occupancy": 2,
-            "amenities": ["private bathroom", "lake view"],
-            "description": "Sunny double on 3rd floor"
-        },
-        "is_room_listed": false
-    }
-}
+Error Responses
 ```
+400 Bad Request   —  id_token missing
+  { "error": "id_token required" }
 
-Response (Returning User):
-```json
-<HTTP STATUS CODE 200>
-{
-    "token": "<jwt>",
-    "user": {
-        "id": "uuid",
-        "email": "bc44@cornell.edu",
-        "full_name": "Bombardino Crocodilo",
-        "class_year": 2025,
-        "current_room": {
-            "dorm": "Keeton House",
-            "room_number": "314",
-            "occupancy": 2,
-            "amenities": ["private bathroom", "lake view"],
-            "description": "Sunny double on 3rd floor"
-        },
-        "is_room_listed": false
-    }
-}
-```
+401 Unauthorized  —  token invalid / expired
+  { "error": "Invalid Google ID token" }
 
-Note: System determines if user is new based on Cornell email from OAuth. New users must provide additional information in callback request.
-
-### 1.2 Register User
-**POST** `/api/auth/register`
-
-Request:
-```json
-{
-    "email": "tt6699@cornell.edu",
-    "full_name": "Tralalero Tralala",
-    "class_year": 2028,
-    "current_room": {
-        "dorm": "Keeton House",
-        "room_number": "314",
-        "occupancy": 2,
-        "amenities": ["private bathroom", "lake view"],
-        "description": "Sunny double on 3rd floor"
-    },
-    "is_room_listed": false
-}
-```
-
-Response:
-```json
-<HTTP STATUS CODE 201>
-{
-    "token": "<jwt>",
-    "user": {
-        "id": "uuid",
-        "email": "tt6699@cornell.edu",
-        "full_name": "Tralalero Tralala",
-        "class_year": 2027,
-        "created_at": "2025-04-23T19:15:00Z",
-        "current_room": {
-            "dorm": "Keeton House",
-            "room_number": "314",
-            "occupancy": 2,
-            "amenities": ["private bathroom", "lake view"],
-            "description": "Sunny double on 3rd floor"
-        },
-        "is_room_listed": false
-    }
-}
+403 Forbidden     —  token not from @cornell.edu account
+  { "error": "Cornell account required" }
 ```
 
 ## 2. Users & Rooms
@@ -273,3 +211,119 @@ Response:
 ```
 
 Note: Only returns rooms where `is_room_listed` is true
+
+# Retired Routes (No longer in service)
+
+### 1.1 Cornell Authentication
+**GET** `/api/auth/cornell`
+- Redirects to Cornell Google OAuth consent screen
+- Automatically restricts to @cornell.edu domain
+- Handles both new and returning users
+
+**POST** `/api/auth/cornell/callback`
+Request (Only required for new users):
+```json
+{
+    "class_year": 2028,
+    "current_room": {
+        "dorm": "Keeton House",
+        "room_number": "314",
+        "occupancy": 2,
+        "amenities": ["private bathroom", "lake view"],
+        "description": "Sunny double on 3rd floor"
+    },
+    "is_room_listed": false
+}
+
+
+```
+
+Response (New User):
+```json
+<HTTP STATUS CODE 201>
+{
+    "token": "<jwt>",
+    "user": {
+        "id": "uuid",
+        "email": "bc44@cornell.edu",
+        "full_name": "Bombardino Crocodilo",  // from Google OAuth
+        "class_year": 2028,
+        "created_at": "2025-04-23T19:15:00Z",
+        "current_room": {
+            "dorm": "Keeton House",
+            "room_number": "314",
+            "occupancy": 2,
+            "amenities": ["private bathroom", "lake view"],
+            "description": "Sunny double on 3rd floor"
+        },
+        "is_room_listed": false
+    }
+}
+```
+
+Response (Returning User):
+```json
+<HTTP STATUS CODE 200>
+{
+    "token": "<jwt>",
+    "user": {
+        "id": "uuid",
+        "email": "bc44@cornell.edu",
+        "full_name": "Bombardino Crocodilo",
+        "class_year": 2025,
+        "current_room": {
+            "dorm": "Keeton House",
+            "room_number": "314",
+            "occupancy": 2,
+            "amenities": ["private bathroom", "lake view"],
+            "description": "Sunny double on 3rd floor"
+        },
+        "is_room_listed": false
+    }
+}
+```
+
+Note: System determines if user is new based on Cornell email from OAuth. New users must provide additional information in callback request.
+
+### 1.2 Register User
+**POST** `/api/auth/register`
+
+Request:
+```json
+{
+    "email": "tt6699@cornell.edu",
+    "full_name": "Tralalero Tralala",
+    "class_year": 2028,
+    "current_room": {
+        "dorm": "Keeton House",
+        "room_number": "314",
+        "occupancy": 2,
+        "amenities": ["private bathroom", "lake view"],
+        "description": "Sunny double on 3rd floor"
+    },
+    "is_room_listed": false
+}
+```
+
+Response:
+```json
+<HTTP STATUS CODE 201>
+{
+    "token": "<jwt>",
+    "user": {
+        "id": "uuid",
+        "email": "tt6699@cornell.edu",
+        "full_name": "Tralalero Tralala",
+        "class_year": 2027,
+        "created_at": "2025-04-23T19:15:00Z",
+        "current_room": {
+            "dorm": "Keeton House",
+            "room_number": "314",
+            "occupancy": 2,
+            "amenities": ["private bathroom", "lake view"],
+            "description": "Sunny double on 3rd floor"
+        },
+        "is_room_listed": false
+    }
+}
+```
