@@ -3,3 +3,4 @@ src/.env
 __pycache__/
 .DS_Store
 src/venv/*
+src/instance
