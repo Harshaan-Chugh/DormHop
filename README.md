@@ -56,57 +56,87 @@ Example:
 Turns into: eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiMTIzIiwiZW1haWwiOiJuZXRpZEBjb3JuZWxsLmVkdSIsImV4cCI6MTY4MjUwNjg3NH0.ABC123signature
 ```
 ## 1. Authentication
+
+### 1.1 Verify Google ID Token
 **POST** `/api/auth/verify_id_token`
-Purpose
--------
-Android sends a Google **ID-token** (obtained from Google Sign-In).
-The backend verifies the token, creates the user if they don’t exist,
-and returns a DormHop JWT.
 
-Headers
--------
+The ID token verification endpoint is the entry point for all authentication. When a user signs in with their Cornell Google account, the client obtains a Google ID token. This token is sent to our backend for verification, which checks that it's valid and from a @cornell.edu account. Upon successful verification, we generate our own JWT that the client will use for all subsequent requests. For new users, we create an account with basic info from Google OAuth. Returning users receive their existing profile data.
+
+Headers:
+```http
 Content-Type: application/json
-
-Request Body:
 ```
+
+Request:
+```json
 {
-  "id_token": "ya29.A0ARrdaMxyz...<google-id-token>..."
+    "id_token": "ya29.A0ARrdaMxyz...<google-id-token>..."
 }
 ```
 
-Responses:
-```
-1. 201 Created  — first-time Cornell user
-2. 200 OK       — returning user
-```
-
-Body that server returns: Both Cases but hopefully room and all is set at creation of user!!!:
-```
+Response (New User):
+```json
+<HTTP STATUS CODE 201>
 {
-  "token": "<dormhop-jwt>",
-  "user": {
-    "id": "uuid",
-    "email": "netid@cornell.edu",
-    "full_name": "User Name",
-    "class_year": 9999,          // placeholder if unknown
-    "created_at": "2025-04-23T19:15:00Z",
-    "current_room": null,        // or room object if already set
-    "is_room_listed": false
-  }
+    "token": "<jwt>",
+    "user": {
+        "id": "uuid",
+        "email": "netid@cornell.edu",
+        "full_name": "User Name",
+        "class_year": 9999,
+        "created_at": "2025-04-23T19:15:00Z",
+        "current_room": null,
+        "is_room_listed": false
+    }
 }
 ```
 
-Error Responses
+Response (Returning User):
+```json
+<HTTP STATUS CODE 200>
+{
+    "token": "<jwt>",
+    "user": {
+        "id": "uuid",
+        "email": "netid@cornell.edu",
+        "full_name": "User Name",
+        "class_year": 2025,
+        "created_at": "2025-04-23T19:15:00Z",
+        "current_room": {
+            "dorm": "Keeton House",
+            "room_number": "314",
+            "occupancy": 2,
+            "amenities": ["private bathroom", "lake view"],
+            "description": "Sunny double on 3rd floor"
+        },
+        "is_room_listed": false
+    }
+}
 ```
-400 Bad Request   —  id_token missing
-  { "error": "id_token required" }
 
-401 Unauthorized  —  token invalid / expired
-  { "error": "Invalid Google ID token" }
+Error Responses:
+```json
+<HTTP STATUS CODE 400>
+{
+    "error": "id_token required"
+}
 
-403 Forbidden     —  token not from @cornell.edu account
-  { "error": "Cornell account required" }
+<HTTP STATUS CODE 401>
+{
+    "error": "Invalid Google ID token"
+}
+
+<HTTP STATUS CODE 403>
+{
+    "error": "Cornell account required"
+}
 ```
+
+Notes:
+- ID token must be from Google Sign-In with Cornell domain
+- New users get placeholder class year (9999)
+- Token in response is a JWT for subsequent requests
+- System determines if user is new based on email
 
 ## 2. Users & Rooms
 
