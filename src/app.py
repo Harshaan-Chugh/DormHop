@@ -116,10 +116,12 @@ def verify_id_token():
     status = 201 if is_new else 200
     return json.dumps({"token": token, "user": user.serialize()}), status
 
-# Route for testing
+# Route for testing authentication
 # @app.route("/api/auth/register", methods=["POST"])
 # def register_user():
-#     """Dev-only registration that skips Google sign-in."""
+#     """
+#     Dev-only registration that skips Google sign-in.
+#     """
 #     data = request.get_json(force=True) or {}
 #     required = {"email", "full_name", "class_year"}
 #     if not required.issubset(data):
