@@ -1,22 +1,15 @@
-"""
-SMOKE-TEST FLASK APP
---------------------
-Runs on http://localhost:5001 with *no* Google or JWT auth.
-Every request is executed as a single fake user: smoke@cornell.edu
-"""
-
 import os, json
 from datetime import datetime, timezone
 from flask import Flask, request
 from db import db, User, Room
 
-DB_FILE = "dormhop_smoke.db"      # separate DB so you don't pollute real data
+DB_FILE = "dormhop_smoke.db" # separate DB so you don't pollute real data
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_FILE}"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-# ───── bootstrap DB ────────────────────────────────────────────────────
+# bootstrap DB
 db.init_app(app)
 with app.app_context():
     db.create_all()
@@ -35,7 +28,7 @@ with app.app_context():
     SMOKE_USER_ID = tester.id
 SMOKE_USER_ID = tester.id
 
-# ───── fake auth decorator ─────────────────────────────────────────────
+# fake auth decorator
 def smoke_user(view_fn):
     def wrapper(*args, **kwargs):
         user = User.query.get(SMOKE_USER_ID)
@@ -43,7 +36,7 @@ def smoke_user(view_fn):
     wrapper.__name__ = view_fn.__name__
     return wrapper
 
-# ───── routes (only the ones we want to test) ──────────────────────────
+# routes (only the ones we want to test)
 @app.route("/api/users/me", methods=["GET"])
 @smoke_user
 def me(user):

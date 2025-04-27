@@ -11,13 +11,11 @@ from google.auth.transport import requests as google_requests
 
 from db import db, User, Room
 
-
 # Environment Stuff
 load_dotenv()
 
 if not os.environ.get("GOOGLE_CLIENT_ID"):
     raise RuntimeError("GOOGLE_CLIENT_ID missing from .env")
-
 
 
 app = Flask(__name__)
@@ -247,12 +245,14 @@ def cosine_similarity(list1, list2):
         return 0.0
     return intersection / math.sqrt(len(set1) * len(set2))
 
+
 @app.route("/api/", methods=["GET"])
 def hello():
     """
     Health-check endpoint.
     """
     return json.dumps({"message": "DormHop API"}), 200
+
 
 @app.route("/api/recommendations", methods = ["GET"])
 @auth_required
