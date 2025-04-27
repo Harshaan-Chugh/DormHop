@@ -1,6 +1,7 @@
 import os
 import json
 from datetime import datetime, timedelta, timezone
+import math
 
 import jwt
 from flask import Flask, request
@@ -10,17 +11,21 @@ from google.auth.transport import requests as google_requests
 
 from db import db, User, Room
 
+
 # Environment Stuff
 load_dotenv()
 
 if not os.environ.get("GOOGLE_CLIENT_ID"):
     raise RuntimeError("GOOGLE_CLIENT_ID missing from .env")
 
+
+
 app = Flask(__name__)
 app.config["GOOGLE_CLIENT_ID"] = os.environ["GOOGLE_CLIENT_ID"]
 JWT_EXP_HOURS = int(os.environ.get("JWT_EXP_HOURS", 24))
 
 # SQLAlchemy Stuff
+app.config["SECRET_KEY"] = "mysecretkey"
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///dormhop.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SQLALCHEMY_ECHO"] = True
@@ -117,34 +122,34 @@ def verify_id_token():
     return json.dumps({"token": token, "user": user.serialize()}), status
 
 # Route for testing authentication
-# @app.route("/api/auth/register", methods=["POST"])
-# def register_user():
-#     """
-#     Dev-only registration that skips Google sign-in.
-#     """
-#     data = request.get_json(force=True) or {}
-#     required = {"email", "full_name", "class_year"}
-#     if not required.issubset(data):
-#         return json.dumps({"error": "email, full_name, class_year are mandatory"}), 400
-#     if User.query.filter_by(email=data["email"]).first():
-#         return json.dumps({"error": "email already registered"}), 400
+@app.route("/api/auth/register", methods=["POST"])
+def register_user():
+    """
+    Dev-only registration that skips Google sign-in.
+    """
+    data = request.get_json(force=True) or {}
+    required = {"email", "full_name", "class_year"}
+    if not required.issubset(data):
+        return json.dumps({"error": "email, full_name, class_year are mandatory"}), 400
+    if User.query.filter_by(email=data["email"]).first():
+        return json.dumps({"error": "email already registered"}), 400
 
-#     user = User(
-#         email=data["email"],
-#         full_name=data["full_name"],
-#         class_year=data["class_year"],
-#         is_room_listed=data.get("is_room_listed", False),
-#     )
-#     db.session.add(user)
-#     db.session.flush()
+    user = User(
+        email=data["email"],
+        full_name=data["full_name"],
+        class_year=data["class_year"],
+        is_room_listed=data.get("is_room_listed", False),
+    )
+    db.session.add(user)
+    db.session.flush()
 
-#     if (room_data := data.get("current_room")):
-#         room_data["owner_id"] = user.id
-#         db.session.add(Room(**room_data))
+    if (room_data := data.get("current_room")):
+        room_data["owner_id"] = user.id
+        db.session.add(Room(**room_data))
 
-#     db.session.commit()
-#     token = encode_token(user)
-#     return json.dumps({"token": token, "user": user.serialize()}), 201
+    db.session.commit()
+    token = encode_token(user)
+    return json.dumps({"token": token, "user": user.serialize()}), 201
 
 # User endpoints
 @app.route("/api/users/me", methods=["GET"])
@@ -231,6 +236,17 @@ def list_rooms(current_user):
     return json.dumps({"rooms": output, "total": len(output)}), 200
 
 
+def cosine_similarity(list1, list2):
+    """
+    Compute cosine similarity between two lists (for amenities).
+    """
+    set1 = set(list1)
+    set2 = set(list2)
+    intersection = len(set1.intersection(set2))
+    if not set1 or not set2:
+        return 0.0
+    return intersection / math.sqrt(len(set1) * len(set2))
+
 @app.route("/api/", methods=["GET"])
 def hello():
     """
@@ -238,6 +254,42 @@ def hello():
     """
     return json.dumps({"message": "DormHop API"}), 200
 
+@app.route("/api/recommendations", methods = ["GET"])
+@auth_required
+def recommend_rooms(current_user):
+    """
+    Recommend rooms based on user's current room amenities and occupancy.
+    """
+    if not current_user.room:
+        return json.dumps({"error": "User has no current room"}), 400
+
+    user_amenities = json.loads(current_user.room.amenities)
+    user_occupancy = current_user.room.occupancy
+
+    rooms = (Room.query.filter(Room.owner_id != current_user.id).join(User).filter(User.is_room_listed.is_(True)).all())
+
+    scored_rooms = []
+
+    for r in rooms:
+        room_amenities = json.loads(r.amenities)
+        room_occupancy = r.occupancy
+
+        amenity_score = cosine_similarity(user_amenities, room_amenities)
+        occupancy_score = 1.0 if room_occupancy == user_occupancy else 0.5
+
+        total_score = 0.7 * amenity_score + 0.3 * occupancy_score
+        scored_rooms.append((r, total_score))
+
+    scored_rooms.sort(key=lambda x: x[1], reverse=True)
+
+    output = []
+    for r, score in scored_rooms:
+        d = r.serialize()
+        d["similarity_score"] = round(score, 2)
+        d["owner"] = {"full_name": r.owner.full_name, "class_year": r.owner.class_year}
+        output.append(d)
+
+    return json.dumps({"rooms": output, "total": len(output)}), 200
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
