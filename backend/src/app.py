@@ -23,7 +23,7 @@ app.config["GOOGLE_CLIENT_ID"] = os.environ["GOOGLE_CLIENT_ID"]
 JWT_EXP_HOURS = int(os.environ.get("JWT_EXP_HOURS", 24))
 
 # SQLAlchemy Stuff
-app.config["SECRET_KEY"] = "mysecretkey"
+app.config["SECRET_KEY"] = os.environ["SECRET_KEY"]
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///dormhop.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SQLALCHEMY_ECHO"] = True
@@ -212,7 +212,33 @@ def set_visibility(current_user):
     ), 200
 
 
-# Public room feed
+# Room Related Endpoints
+@app.route("/api/rooms/<int:room_id>", methods=["GET"])
+@auth_required
+def get_room(current_user, room_id):
+    """
+    Return a single room by its ID.
+    
+    Rules:
+    1. Owners can always fetch their own room.
+    2. Other users can only fetch if the room is currently listed.
+    """
+    room = Room.query.get(room_id)
+    if not room:
+        return json.dumps({"error": "Room not found"}), 404
+
+    # If the caller is not the owner, enforce is_room_listed
+    if room.owner_id != current_user.id and not room.owner.is_room_listed:
+        return json.dumps({"error": "Room not found"}), 404
+
+    data = room.serialize()
+    data["owner"] = {
+        "full_name": room.owner.full_name,
+        "class_year": room.owner.class_year,
+    }
+    return json.dumps(data), 200
+
+
 @app.route("/api/rooms", methods=["GET"])
 @auth_required
 def list_rooms(current_user):

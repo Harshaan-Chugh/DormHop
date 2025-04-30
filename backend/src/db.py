@@ -42,6 +42,7 @@ class Room(db.Model):
 
     def serialize(self):
         return {
+            "id": self.id,
             "dorm": self.dorm,
             "room_number": self.room_number,
             "occupancy": self.occupancy,
