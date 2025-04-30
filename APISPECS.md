@@ -1,3 +1,5 @@
+# Cornell DormHop API Specifications
+
 ## 1. Authentication
 
 ### 1.1 Verify Google ID Token

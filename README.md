@@ -1,4 +1,4 @@
-# Cornell DormHop API
+# Cornell DormHop
 #### Description: A Cornell-specific room-swap platform that lets students list their current dorm rooms—with amenities, and preferences—browse others’ listings, “love” interesting rooms, and send knocks (swap requests) that open a private negotiation workflow while keeping contact details hidden until both sides agree. It streamlines the post-selection housing shuffle by matching students quickly and transparently, replacing ad-hoc group chats and scattered online postings with a structured, searchable market.
 
 ## General Information
