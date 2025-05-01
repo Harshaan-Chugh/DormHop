@@ -21,8 +21,8 @@ if not os.environ.get("SECRET_KEY"):
 
 app = Flask(__name__)
 app.config["GOOGLE_CLIENT_ID"] = os.environ["GOOGLE_CLIENT_ID"]
-app.config["SECRET_KEY"]      = os.environ["SECRET_KEY"]
-JWT_EXP_HOURS                 = int(os.environ.get("JWT_EXP_HOURS", 24))
+app.config["SECRET_KEY"]       = os.environ["SECRET_KEY"]
+JWT_EXP_HOURS                  = int(os.environ.get("JWT_EXP_HOURS", 24))
 
 # SQLAlchemy
 app.config["SQLALCHEMY_DATABASE_URI"]        = "sqlite:///dormhop.db"
@@ -101,10 +101,10 @@ def verify_id_token():
     if info.get("hd") and info["hd"] != "cornell.edu":
         return json.dumps({"error": "Cornell account required"}), 403
 
-    email     = info["email"]
+    email = info["email"]
     full_name = info.get("name", "")
 
-    user   = User.query.filter_by(email=email).first()
+    user = User.query.filter_by(email=email).first()
     is_new = False
     if not user:
         user = User(email=email, full_name=full_name, class_year=9999)
@@ -112,7 +112,7 @@ def verify_id_token():
         db.session.commit()
         is_new = True
 
-    token  = encode_token(user)
+    token = encode_token(user)
     status = 201 if is_new else 200
     return json.dumps({"token": token, "user": user.serialize()}), status
 
@@ -122,7 +122,7 @@ def register_user():
     """
     Dev-only registration that skips Google sign-in.
     """
-    data     = request.get_json(force=True) or {}
+    data = request.get_json(force=True) or {}
     required = {"email", "full_name", "class_year"}
     if not required.issubset(data):
         return json.dumps({"error": "email, full_name, class_year are mandatory"}), 400
@@ -159,7 +159,7 @@ def update_room(current_user):
     """
     Create or update the caller’s room and mark it as listed.
     """
-    data     = request.get_json(force=True) or {}
+    data = request.get_json(force=True) or {}
     required = {"dorm", "room_number", "occupancy"}
     if not required.issubset(data):
         return json.dumps({"error": "dorm, room_number, occupancy are required"}), 400
@@ -217,7 +217,7 @@ def get_room(current_user, room_id):
     if room.owner_id != current_user.id and not room.owner.is_room_listed:
         return json.dumps({"error": "Room not found"}), 404
 
-    data       = room.serialize()
+    data = room.serialize()
     data["owner"] = {
         "full_name": room.owner.full_name,
         "class_year": room.owner.class_year
@@ -257,7 +257,7 @@ def recommend_rooms(current_user):
         return json.dumps({"error": "User has no current room"}), 400
 
     user_amen = json.loads(current_user.room.amenities)
-    user_occ   = current_user.room.occupancy
+    user_occ = current_user.room.occupancy
 
     rooms = (Room.query
              .filter(Room.owner_id != current_user.id)
@@ -383,7 +383,7 @@ def accept_knock(current_user, knock_id):
     Returns 403 if not the room owner.
     Returns 400 if already accepted.
     """
-    data   = request.get_json(force=True) or {}
+    data = request.get_json(force=True) or {}
     if data.get("status") != "accepted":
         return json.dumps({"error": "Can only set status to 'accepted'"}), 400
 
@@ -396,7 +396,7 @@ def accept_knock(current_user, knock_id):
         return json.dumps({"error": "Already accepted"}), 400
 
     # mark accepted
-    knock.status      = "accepted"
+    knock.status = "accepted"
     knock.accepted_at = datetime.now(timezone.utc)
     db.session.commit()
 
@@ -443,7 +443,7 @@ def save_room(current_user):
     Returns 400 if room_id missing or already saved.
     Returns 404 if room not found or not listed.
     """
-    data    = request.get_json(force=True) or {}
+    data = request.get_json(force=True) or {}
     room_id = data.get("room_id")
     if not room_id:
         return json.dumps({"error": "room_id required"}), 400
