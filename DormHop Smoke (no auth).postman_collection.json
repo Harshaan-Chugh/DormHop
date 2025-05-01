@@ -1,0 +1,101 @@
+{
+	"info": {
+		"_postman_id": "3d276f78-8ca6-431b-8535-204a8cc11065",
+		"name": "DormHop Smoke (no auth)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "36660810",
+		"_collection_link": "https://intro-to-backend.postman.co/workspace/Intro-to-Backend~8964c067-9954-417d-b494-e7d6b5489bc0/collection/36660810-3d276f78-8ca6-431b-8535-204a8cc11065?action=share&source=collection_link&creator=36660810"
+	},
+	"item": [
+		{
+			"name": "00 - Ping",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base}}/api/",
+					"host": [
+						"{{base}}"
+					],
+					"path": [
+						"api",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "01 - Me",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base}}/api/users/me",
+					"host": [
+						"{{base}}"
+					],
+					"path": [
+						"api",
+						"users",
+						"me"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "02 - Upsert Room",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"dorm\":\"Keeton House\",\n  \"room_number\":\"999\",\n  \"occupancy\":1,\n  \"amenities\":[\"smoke\"],\n  \"description\":\"smoke test\"\n}"
+				},
+				"url": {
+					"raw": "{{base}}/api/users/me/room",
+					"host": [
+						"{{base}}"
+					],
+					"path": [
+						"api",
+						"users",
+						"me",
+						"room"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "03 - Browse Rooms",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base}}/api/rooms",
+					"host": [
+						"{{base}}"
+					],
+					"path": [
+						"api",
+						"rooms"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "base",
+			"value": "http://localhost:5001"
+		}
+	]
+}
