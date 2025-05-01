@@ -1,7 +1,7 @@
 import os
 import json
-from datetime import datetime, timedelta, timezone
 import math
+from datetime import datetime, timedelta, timezone
 
 import jwt
 from flask import Flask, request
@@ -9,24 +9,25 @@ from dotenv import load_dotenv
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 
-from db import db, User, Room
+from db import db, User, Room, Knock
 
-# Environment Stuff
+# Environment
 load_dotenv()
 
 if not os.environ.get("GOOGLE_CLIENT_ID"):
     raise RuntimeError("GOOGLE_CLIENT_ID missing from .env")
-
+if not os.environ.get("SECRET_KEY"):
+    raise RuntimeError("SECRET_KEY missing from .env")
 
 app = Flask(__name__)
 app.config["GOOGLE_CLIENT_ID"] = os.environ["GOOGLE_CLIENT_ID"]
-JWT_EXP_HOURS = int(os.environ.get("JWT_EXP_HOURS", 24))
+app.config["SECRET_KEY"]      = os.environ["SECRET_KEY"]
+JWT_EXP_HOURS                 = int(os.environ.get("JWT_EXP_HOURS", 24))
 
-# SQLAlchemy Stuff
-app.config["SECRET_KEY"] = os.environ["SECRET_KEY"]
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///dormhop.db"
+# SQLAlchemy
+app.config["SQLALCHEMY_DATABASE_URI"]        = "sqlite:///dormhop.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["SQLALCHEMY_ECHO"] = True
+app.config["SQLALCHEMY_ECHO"]                = True
 
 db.init_app(app)
 with app.app_context():
@@ -34,21 +35,17 @@ with app.app_context():
 
 # JWT helpers
 def encode_token(user):
-    """
-    Return a signed JWT for a user.
-    """
-    output = {
+    """Return a signed JWT for a user."""
+    payload = {
         "user_id": user.id,
         "email": user.email,
         "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_EXP_HOURS),
     }
-    return jwt.encode(output, app.config["SECRET_KEY"], algorithm="HS256")
+    return jwt.encode(payload, app.config["SECRET_KEY"], algorithm="HS256")
 
 
 def decode_token(token):
-    """
-    Decode JWT or return None if invalid/expired.
-    """
+    """Decode JWT or return None if invalid/expired."""
     try:
         return jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
     except jwt.InvalidTokenError:
@@ -80,14 +77,14 @@ def auth_required(view_fn):
     wrapper.__name__ = view_fn.__name__
     return wrapper
 
-# ID-token verification route
-@app.route("/api/auth/verify_id_token", methods=["POST"])
+# Authentication
+@app.route("/api/auth/verify_id_token/", methods=["POST"])
 def verify_id_token():
     """
     Android sends {"id_token": "<google-id-token>"}.
     Backend verifies it, then issues its own JWT.
     """
-    data = request.get_json(force=True) or {}
+    data         = request.get_json(force=True) or {}
     id_token_str = data.get("id_token")
     if not id_token_str:
         return json.dumps({"error": "id_token required"}), 400
@@ -104,10 +101,10 @@ def verify_id_token():
     if info.get("hd") and info["hd"] != "cornell.edu":
         return json.dumps({"error": "Cornell account required"}), 403
 
-    email = info["email"]
+    email     = info["email"]
     full_name = info.get("name", "")
 
-    user = User.query.filter_by(email=email).first()
+    user   = User.query.filter_by(email=email).first()
     is_new = False
     if not user:
         user = User(email=email, full_name=full_name, class_year=9999)
@@ -115,17 +112,17 @@ def verify_id_token():
         db.session.commit()
         is_new = True
 
-    token = encode_token(user)
+    token  = encode_token(user)
     status = 201 if is_new else 200
     return json.dumps({"token": token, "user": user.serialize()}), status
 
-# Route for testing authentication
-@app.route("/api/auth/register", methods=["POST"])
+
+@app.route("/api/auth/register/", methods=["POST"])
 def register_user():
     """
     Dev-only registration that skips Google sign-in.
     """
-    data = request.get_json(force=True) or {}
+    data     = request.get_json(force=True) or {}
     required = {"email", "full_name", "class_year"}
     if not required.issubset(data):
         return json.dumps({"error": "email, full_name, class_year are mandatory"}), 400
@@ -140,42 +137,39 @@ def register_user():
     )
     db.session.add(user)
     db.session.flush()
-
     if (room_data := data.get("current_room")):
         room_data["owner_id"] = user.id
         db.session.add(Room(**room_data))
-
     db.session.commit()
+
     token = encode_token(user)
     return json.dumps({"token": token, "user": user.serialize()}), 201
 
 # User endpoints
-@app.route("/api/users/me", methods=["GET"])
+@app.route("/api/users/me/", methods=["GET"])
 @auth_required
 def get_profile(current_user):
-    """
-    Return the current user’s profile, including room information.
-    """
+    """Return the current user’s profile, including room information."""
     return json.dumps(current_user.serialize()), 200
 
 
-@app.route("/api/users/me/room", methods=["PATCH"])
+@app.route("/api/users/me/room/", methods=["PATCH"])
 @auth_required
 def update_room(current_user):
     """
     Create or update the caller’s room and mark it as listed.
     """
-    data = request.get_json(force=True) or {}
+    data     = request.get_json(force=True) or {}
     required = {"dorm", "room_number", "occupancy"}
     if not required.issubset(data):
         return json.dumps({"error": "dorm, room_number, occupancy are required"}), 400
 
     if current_user.room:
         r = current_user.room
-        r.dorm = data["dorm"]
+        r.dorm        = data["dorm"]
         r.room_number = data["room_number"]
-        r.occupancy = data["occupancy"]
-        r.amenities = json.dumps(data.get("amenities", []))
+        r.occupancy   = data["occupancy"]
+        r.amenities   = json.dumps(data.get("amenities", []))
         r.description = data.get("description")
     else:
         data["owner_id"] = current_user.id
@@ -186,13 +180,13 @@ def update_room(current_user):
     current_user.is_room_listed = True
     db.session.commit()
 
-    response = r.serialize()
-    response["updated_at"] = datetime.now(timezone.utc).isoformat()
-    response["is_room_listed"] = True
-    return json.dumps(response), 200
+    resp = r.serialize()
+    resp["updated_at"] = datetime.now(timezone.utc).isoformat()
+    resp["is_room_listed"] = True
+    return json.dumps(resp), 200
 
 
-@app.route("/api/users/me/room/visibility", methods=["PATCH"])
+@app.route("/api/users/me/room/visibility/", methods=["PATCH"])
 @auth_required
 def set_visibility(current_user):
     """
@@ -204,118 +198,305 @@ def set_visibility(current_user):
 
     current_user.is_room_listed = bool(data["is_room_listed"])
     db.session.commit()
-    return json.dumps(
-        {
-            "is_room_listed": current_user.is_room_listed,
-            "updated_at": datetime.now(timezone.utc).isoformat(),
-        }
-    ), 200
+    return json.dumps({
+        "is_room_listed": current_user.is_room_listed,
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }), 200
 
-
-# Room Related Endpoints
-@app.route("/api/rooms/<int:room_id>", methods=["GET"])
+# Room endpoints
+@app.route("/api/rooms/<int:room_id>/", methods=["GET"])
 @auth_required
 def get_room(current_user, room_id):
     """
     Return a single room by its ID.
-    
-    Rules:
-    1. Owners can always fetch their own room.
-    2. Other users can only fetch if the room is currently listed.
+    Owners always may fetch; others only if listed.
     """
     room = Room.query.get(room_id)
     if not room:
         return json.dumps({"error": "Room not found"}), 404
-
-    # If the caller is not the owner, enforce is_room_listed
     if room.owner_id != current_user.id and not room.owner.is_room_listed:
         return json.dumps({"error": "Room not found"}), 404
 
-    data = room.serialize()
+    data       = room.serialize()
     data["owner"] = {
         "full_name": room.owner.full_name,
-        "class_year": room.owner.class_year,
+        "class_year": room.owner.class_year
     }
     return json.dumps(data), 200
 
 
-@app.route("/api/rooms", methods=["GET"])
+@app.route("/api/rooms/", methods=["GET"])
 @auth_required
 def list_rooms(current_user):
     """
     Return all listed rooms except the caller’s own room.
     """
-    rooms = (
-        Room.query.join(User)
-        .filter(User.is_room_listed.is_(True), User.id != current_user.id)
-        .all()
-    )
+    rooms = (Room.query
+              .join(User)
+              .filter(User.is_room_listed.is_(True),
+                      User.id != current_user.id)
+              .all())
 
-    output = []
+    out = []
     for r in rooms:
         d = r.serialize()
-        d["owner"] = {"full_name": r.owner.full_name, "class_year": r.owner.class_year}
-        output.append(d)
+        d["owner"] = {"full_name": r.owner.full_name,
+                      "class_year": r.owner.class_year}
+        out.append(d)
 
-    return json.dumps({"rooms": output, "total": len(output)}), 200
-
-
-def cosine_similarity(list1, list2):
-    """
-    Compute cosine similarity between two lists (for amenities).
-    """
-    set1 = set(list1)
-    set2 = set(list2)
-    intersection = len(set1.intersection(set2))
-    if not set1 or not set2:
-        return 0.0
-    return intersection / math.sqrt(len(set1) * len(set2))
+    return json.dumps({"rooms": out, "total": len(out)}), 200
 
 
-@app.route("/api/", methods=["GET"])
-def hello():
-    """
-    Health-check endpoint.
-    """
-    return json.dumps({"message": "DormHop API"}), 200
-
-
-@app.route("/api/recommendations", methods = ["GET"])
+@app.route("/api/recommendations/", methods=["GET"])
 @auth_required
 def recommend_rooms(current_user):
     """
-    Recommend rooms based on user's current room amenities and occupancy.
+    Recommend rooms based on amenities & occupancy similarity.
     """
     if not current_user.room:
         return json.dumps({"error": "User has no current room"}), 400
 
-    user_amenities = json.loads(current_user.room.amenities)
-    user_occupancy = current_user.room.occupancy
+    user_amen = json.loads(current_user.room.amenities)
+    user_occ   = current_user.room.occupancy
 
-    rooms = (Room.query.filter(Room.owner_id != current_user.id).join(User).filter(User.is_room_listed.is_(True)).all())
+    rooms = (Room.query
+             .filter(Room.owner_id != current_user.id)
+             .join(User)
+             .filter(User.is_room_listed.is_(True))
+             .all())
 
-    scored_rooms = []
-
+    scored = []
     for r in rooms:
-        room_amenities = json.loads(r.amenities)
-        room_occupancy = r.occupancy
+        a_score = (_cosine := (
+            len(set(user_amen).intersection(json.loads(r.amenities)))
+            / math.sqrt(len(user_amen) * len(json.loads(r.amenities)))
+        ) if user_amen and json.loads(r.amenities) else 0.0)
+        o_score = 1.0 if r.occupancy == user_occ else 0.5
+        total   = 0.7 * a_score + 0.3 * o_score
+        scored.append((r, total))
 
-        amenity_score = cosine_similarity(user_amenities, room_amenities)
-        occupancy_score = 1.0 if room_occupancy == user_occupancy else 0.5
-
-        total_score = 0.7 * amenity_score + 0.3 * occupancy_score
-        scored_rooms.append((r, total_score))
-
-    scored_rooms.sort(key=lambda x: x[1], reverse=True)
-
-    output = []
-    for r, score in scored_rooms:
+    scored.sort(key=lambda x: x[1], reverse=True)
+    out = []
+    for r, score in scored:
         d = r.serialize()
         d["similarity_score"] = round(score, 2)
-        d["owner"] = {"full_name": r.owner.full_name, "class_year": r.owner.class_year}
-        output.append(d)
+        d["owner"] = {"full_name": r.owner.full_name,
+                      "class_year": r.owner.class_year}
+        out.append(d)
 
-    return json.dumps({"rooms": output, "total": len(output)}), 200
+    return json.dumps({"rooms": out, "total": len(out)}), 200
+
+@app.route("/api/knocks/", methods=["POST"])
+@auth_required
+def send_knock(current_user):
+    """
+    Send a swap request ("knock") to another user's room.
+    If the target room's owner has already knocked on the
+    current_user's room, auto-accept both knocks and return
+    contact info for both parties.
+    """
+    data = request.get_json(force=True) or {}
+    room_id = data.get("to_room_id")
+    if not room_id:
+        return json.dumps({"error": "to_room_id required"}), 400
+
+    if not current_user.room:
+        return json.dumps({"error": "Create/list your room before knocking"}), 400
+
+    # fetch & validate
+    room = Room.query.get(room_id)
+    if not room or not room.owner.is_room_listed:
+        return json.dumps({"error": "Room not found"}), 404
+    if room.owner_id == current_user.id:
+        return json.dumps({"error": "Cannot knock your own room"}), 400
+
+    # ensure we haven't already knocked
+    exists = Knock.query.filter_by(
+        from_user_id=current_user.id,
+        to_room_id=room_id
+    ).first()
+    if exists:
+        return json.dumps({"error": "Already knocked"}), 400
+
+    # create the knock
+    knock = Knock(from_user_id=current_user.id, to_room_id=room_id)
+    db.session.add(knock)
+    db.session.commit()
+
+    # check for a reciprocal knock
+    reciprocal = Knock.query.filter_by(
+        from_user_id=room.owner_id,
+        to_room_id=current_user.room.id,
+        status="pending"
+    ).first()
+
+    if reciprocal:
+        # auto-accept both
+        now = datetime.now(timezone.utc)
+        knock.status = "accepted"
+        knock.accepted_at = now
+        reciprocal.status = "accepted"
+        reciprocal.accepted_at = now
+        db.session.commit()
+
+        # build a unified response with contacts
+        resp = knock.serialize()
+        resp["contacts"] = {
+            "requester_email": knock.from_user.email,
+            "owner_email":     room.owner.email
+        }
+        return json.dumps(resp), 200
+
+    # if no reciprocal, just return the new knock
+    return json.dumps(knock.serialize()), 201
+
+@app.route("/api/knocks/sent/", methods=["GET"])
+@auth_required
+def list_sent_knocks(current_user):
+    """
+    List all knocks sent by the current user.
+    Returns array of knock objects with room and status info.
+    """
+    knocks = Knock.query.filter_by(from_user_id=current_user.id).all()
+    return json.dumps({"knocks": [k.serialize() for k in knocks]}), 200
+
+@app.route("/api/knocks/received/", methods=["GET"])
+@auth_required
+def list_received_knocks(current_user):
+    """
+    List all knocks received on the user's room.
+    Returns array of knock objects with sender info.
+    """
+    knocks = (Knock.query
+                   .join(Room, Knock.to_room)
+                   .filter(Room.owner_id == current_user.id)
+                   .all())
+    return json.dumps({"knocks": [k.serialize() for k in knocks]}), 200
+
+@app.route("/api/knocks/<int:knock_id>/", methods=["PATCH"])
+@auth_required
+def accept_knock(current_user, knock_id):
+    """
+    Accept a received knock, revealing contact info to both parties.
+    
+    Request body must contain {"status": "accepted"}.
+    Returns 403 if not the room owner.
+    Returns 400 if already accepted.
+    """
+    data   = request.get_json(force=True) or {}
+    if data.get("status") != "accepted":
+        return json.dumps({"error": "Can only set status to 'accepted'"}), 400
+
+    knock = Knock.query.get(knock_id)
+    if not knock:
+        return json.dumps({"error": "Knock not found"}), 404
+    if knock.to_room.owner_id != current_user.id:
+        return json.dumps({"error": "Not authorized"}), 403
+    if knock.status == "accepted":
+        return json.dumps({"error": "Already accepted"}), 400
+
+    # mark accepted
+    knock.status      = "accepted"
+    knock.accepted_at = datetime.now(timezone.utc)
+    db.session.commit()
+
+    # response with 
+    resp = knock.serialize()
+    resp["contacts"] = {
+        "requester_email": knock.from_user.email,
+        "owner_email":     current_user.email
+    }
+    return json.dumps(resp), 200
+
+@app.route("/api/knocks/<int:knock_id>/", methods=["DELETE"])
+@auth_required
+def delete_knock(current_user, knock_id):
+    """
+    Delete a knock (cancel sent request or reject received request).
+    
+    Either sender or receiver can delete.
+    Returns 403 if not authorized.
+    """
+    knock = Knock.query.get(knock_id)
+    if not knock:
+        return json.dumps({"error": "Knock not found"}), 404
+
+    allowed = (
+        knock.from_user_id == current_user.id or
+        knock.to_room.owner_id == current_user.id
+    )
+    if not allowed:
+        return json.dumps({"error": "Not authorized"}), 403
+
+    db.session.delete(knock)
+    db.session.commit()
+    return json.dumps({"success": True}), 200
+
+# Saved‑rooms endpoints
+@app.route("/api/users/me/saved_rooms/", methods=["POST"])
+@auth_required
+def save_room(current_user):
+    """
+    Save a room to the user's favorites list.
+    
+    Request body must contain room_id.
+    Returns 400 if room_id missing or already saved.
+    Returns 404 if room not found or not listed.
+    """
+    data    = request.get_json(force=True) or {}
+    room_id = data.get("room_id")
+    if not room_id:
+        return json.dumps({"error": "room_id required"}), 400
+
+    room = Room.query.get(room_id)
+    if not room or not room.owner.is_room_listed:
+        return json.dumps({"error": "Room not found"}), 404
+    if room in current_user.saved_rooms:
+        return json.dumps({"error": "Already saved"}), 400
+
+    current_user.saved_rooms.append(room)
+    db.session.commit()
+    return json.dumps({"success": True}), 201
+
+@app.route("/api/users/me/saved_rooms/", methods=["GET"])
+@auth_required
+def list_saved_rooms(current_user):
+    """
+    Return all rooms saved by the current user.
+    
+    Each room includes basic owner information.
+    Returns empty list if no rooms are saved.
+    """
+    output = []
+    for room in current_user.saved_rooms:
+        data = room.serialize()
+        data["owner"] = {
+            "full_name": room.owner.full_name,
+            "class_year": room.owner.class_year
+        }
+        output.append(data)
+    return json.dumps({"saved_rooms": output}), 200
+
+@app.route("/api/users/me/saved_rooms/<int:room_id>/", methods=["DELETE"])
+@auth_required
+def unsave_room(current_user, room_id):
+    """
+    Remove a room from user's saved list.
+    """
+    room = Room.query.get(room_id)
+    if not room:
+        return json.dumps({"error": "Room not found"}), 404
+    if room not in current_user.saved_rooms:
+        return json.dumps({"error": "Not in saved list"}), 400
+
+    current_user.saved_rooms.remove(room)
+    db.session.commit()
+    return json.dumps({"success": True}), 200
+
+# Dummy Route
+@app.route("/api/", methods=["GET"])
+def hello():
+    return json.dumps({"message": "Welcome to the DormHop API"}), 200
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

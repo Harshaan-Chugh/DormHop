@@ -5,32 +5,26 @@ from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 
+# Saved‐rooms many-to-many table
+saved_rooms = db.Table(
+    "saved_rooms",
+    db.Column("user_id",  db.Integer, db.ForeignKey("users.id"), primary_key=True),
+    db.Column("room_id",  db.Integer, db.ForeignKey("rooms.id"), primary_key=True),
+)
 
 class Room(db.Model):
-    """
-    Room model representing a dorm room in the Cornell housing system.
-    dorm (str): Name of the dormitory building
-    room_number (str): Room identifier within the building
-    occupancy (int): Number of students the room can accommodate
-    amenities (str): JSON-encoded list of room amenities
-    description (str): Optional description of the room
-    owner_id (int): Foreign key to the user who owns this room
-    """
     __tablename__ = "rooms"
-
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    dorm = db.Column(db.String, nullable=False)
-    room_number = db.Column(db.String, nullable=False)
+    dorm = db.Column(db.String,  nullable=False)
+    room_number = db.Column(db.String,  nullable=False)
     occupancy = db.Column(db.Integer, nullable=False)
-    amenities = db.Column(db.Text, nullable=False)  # JSON‑encoded list
-    description = db.Column(db.String, nullable=True)
-
+    amenities = db.Column(db.Text,    nullable=False)  # JSON list
+    description = db.Column(db.String,  nullable=True)
     owner_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, 
+                          default=lambda: datetime.now(timezone.utc),
+                          onupdate=lambda: datetime.now(timezone.utc))
 
     def __init__(self, **kwargs):
         self.dorm = kwargs.get("dorm")
@@ -51,27 +45,21 @@ class Room(db.Model):
         }
 
 class User(db.Model):
-    """
-    User model representing a Cornell student in the room swap system.
-    email (str): Cornell email address (@cornell.edu)
-    full_name (str): User's full name from Google OAuth
-    class_year (int): Expected graduation year
-    is_room_listed (bool): Whether user's room is available for swaps
-    auto_reject_triple (bool): Preference for triple room offers
-    room (Room): One-to-one relationship with Room model
-    """
     __tablename__ = "users"
-
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    email = db.Column(db.String, nullable=False, unique=True)
-    full_name = db.Column(db.String, nullable=False)
+    email = db.Column(db.String,  nullable=False, unique=True)
+    full_name = db.Column(db.String,  nullable=False)
     class_year = db.Column(db.Integer, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     is_room_listed = db.Column(db.Boolean, default=False)
     auto_reject_triple = db.Column(db.Boolean, default=False)
 
-    room = db.relationship(
-        "Room", uselist=False, cascade="all, delete-orphan", backref="owner"
+    room = db.relationship("Room", uselist=False, cascade="all, delete-orphan", backref="owner")
+
+    # bookmarks
+    saved_rooms = db.relationship(
+        "Room", secondary=saved_rooms,
+        backref="saved_by"
     )
 
     def __init__(self, **kwargs):
@@ -90,11 +78,31 @@ class User(db.Model):
 
     def serialize(self):
         data = self.simple_serialize()
-        data.update(
-            {
-                "created_at": self.created_at.isoformat() + "Z",
-                "current_room": self.room.serialize() if self.room else None,
-                "is_room_listed": self.is_room_listed,
-            }
-        )
+        data.update({
+            "created_at": self.created_at.isoformat() + "Z",
+            "current_room": self.room.serialize() if self.room else None,
+            "is_room_listed": self.is_room_listed,
+        })
         return data
+
+class Knock(db.Model):
+    __tablename__ = "knocks"
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    from_user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    to_room_id = db.Column(db.Integer, db.ForeignKey("rooms.id"), nullable=False)
+    status = db.Column(db.String,  nullable=False, default="pending")
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    accepted_at = db.Column(db.DateTime, nullable=True)
+
+    from_user = db.relationship("User", backref="knocks_sent", foreign_keys=[from_user_id])
+    to_room   = db.relationship("Room", backref="knocks_received", foreign_keys=[to_room_id])
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "from_user": self.from_user.simple_serialize(),
+            "to_room": self.to_room.serialize(),
+            "status": self.status,
+            "created_at": self.created_at.isoformat() + "Z",
+            "accepted_at": self.accepted_at.isoformat() + "Z" if self.accepted_at else None
+        }
