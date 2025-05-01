@@ -4,3 +4,5 @@ services:
     image: harshaan999/dormhop:v2.0.0
     ports:
       - "80:5000"
+    env_file:
+      - .env
