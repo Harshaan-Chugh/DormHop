@@ -12,16 +12,17 @@ import javax.inject.Singleton
 
 @Module @InstallIn(SingletonComponent::class)
 object NetworkModule {
-
     @Provides @Singleton
-    fun provideOkHttpClient(): OkHttpClient =
-        OkHttpClient.Builder().build()
+    fun provideOkHttpClient(authInterceptor: AuthInterceptor): OkHttpClient =
+        OkHttpClient.Builder()
+            .addInterceptor(authInterceptor)
+            .build()
 
     @Provides @Singleton
     fun provideRetrofit(client: OkHttpClient): Retrofit =
         Retrofit.Builder()
             /* TODO: Change the URL later to the deployed app*/
-            .baseUrl("http://10.0.2.2:5000/")   // emulator → your machine
+            .baseUrl("http://34.86.55.150/api/")   // emulator → your machine
             .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()

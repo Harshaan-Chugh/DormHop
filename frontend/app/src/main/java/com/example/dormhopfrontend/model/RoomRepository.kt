@@ -29,6 +29,21 @@ class RoomRepository @Inject constructor(
         }
     }
 
+    /** Fetch one room by ID, or null on failure */
+    suspend fun getRoomById(roomId: Int): RoomDto? {
+        return try {
+            val resp = api.getRoom(roomId)
+            if (resp.isSuccessful) resp.body()
+            else {
+                Log.e("RoomRepo", "getRoomById failed: ${resp.code()} ${resp.message()}")
+                null
+            }
+        } catch(e: Exception) {
+            Log.e("RoomRepo", "Exception in getRoomById", e)
+            null
+        }
+    }
+
     /**
      * Fetches personalized recommendations.
      */

@@ -2,6 +2,7 @@ package com.example.dormhopfrontend.screens
 
 import android.app.Activity
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.compose.foundation.layout.*
@@ -37,12 +38,19 @@ fun RegistrationScreen(
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             // User added a Google account → retry the flow
+            Toast
+                .makeText(context, "✅ Account added, retrying sign-in…", Toast.LENGTH_SHORT)
+                .show()
             shouldRetry = true
         }
     }
 
     // Retry once the user adds an account
     if (shouldRetry) {
+        Toast
+            .makeText(context, "🔄 Retrying Google Sign-In…", Toast.LENGTH_SHORT)
+            .show()
+
         LaunchedEffect(Unit) {
             SignInActivity.doGoogleSignIn(
                 context  = context,
@@ -87,6 +95,9 @@ fun RegistrationScreen(
                     Spacer(Modifier.height(24.dp))
                     Button(
                         onClick = {
+                            Toast
+                                .makeText(context, "👉 Starting Google Sign-In", Toast.LENGTH_SHORT)
+                                .show()
                             scope.launch {
                                 SignInActivity.doGoogleSignIn(
                                     context  = context,

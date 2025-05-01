@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "128583646853-6sar55o56j2pt1aunrjermt1eufk707t.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.dormhopfrontend",
+            "certificate_hash": "1ac69e3d1ae4ee4eaf7d8146872bfdc30fbf2ca7"
+          }
+        },
+        {
           "client_id": "128583646853-nanl6sp07i8ueuvejrqogqq3jvfr5r5v.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

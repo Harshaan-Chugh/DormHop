@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.provider.Settings
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.result.ActivityResult
 import androidx.credentials.CredentialManager
@@ -43,6 +44,9 @@ class SignInActivity {
             scope.launch {
                 try {
                     val response = credentialManager.getCredential(context, request)
+                    Toast
+                        .makeText(context, "🔍 Got credential response", Toast.LENGTH_SHORT)
+                        .show()
                     // response.credential can be a GoogleIdTokenCredential or a CustomCredential
                     val idToken: String? = when (val cred = response.credential) {
                         is GoogleIdTokenCredential -> cred.idToken
@@ -54,17 +58,29 @@ class SignInActivity {
                     }
 
                     if (idToken != null) {
+                        Toast
+                            .makeText(context, "✅ ID token retrieved", Toast.LENGTH_SHORT)
+                            .show()
                         // Exchange with Firebase
                         val firebaseCred = GoogleAuthProvider.getCredential(idToken, null)
                         FirebaseAuth.getInstance().signInWithCredential(firebaseCred).await()
                         // Finally call your callback so the UI can move on
                         login(idToken)
                     } else {
+                        Toast
+                            .makeText(context, "⚠️ No ID token in credential", Toast.LENGTH_LONG)
+                            .show()
                         Log.e(TAG, "Got credential but no ID token")
                     }
                 } catch (e: NoCredentialException) {
+                    Toast
+                        .makeText(context, "➕ No credential found; launching Add-Account…", Toast.LENGTH_LONG)
+                        .show()
                     launcher?.launch(getAddAccountIntent())
                 } catch (e: GetCredentialException) {
+                    Toast
+                        .makeText(context, "❌ Credential request failed: ${e.message}", Toast.LENGTH_LONG)
+                        .show()
                     Log.e(TAG, "Credential request failed", e)
                 }
             }

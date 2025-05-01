@@ -19,29 +19,90 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.dormhopfrontend.model.OwnerDto
+import com.example.dormhopfrontend.model.RoomDto
 import com.example.dormhopfrontend.viewmodel.SearchViewModel
 
 /** Represents a single dorm listing */
 data class DormItem(val title: String, val address: String)
 
-/** Some dummy listings to render for now */
-private val sampleDorms = listOf(
-    DormItem("Single Dormitory", "488 McFaddin Hall, West Campus"),
-    DormItem("Double Dormitory", "422 McFaddin Hall, West Campus"),
-    DormItem("Triple Dormitory", "563 Carl Becker House, North Campus")
+// Sample placeholders for UI consistency
+private val sampleRooms = listOf(
+    RoomDto(
+        id = -1,
+        dorm = "McFaddin Hall, West Campus",
+        roomNumber = "488",
+        occupancy = 1,
+        amenities = listOf("Air Conditioning", "High-Speed WiFi"),
+        description = "Cozy single with a west-facing view",
+        createdAt = "04/01/2025",
+        updatedAt = "04/30/2025",
+        isRoomListed = true,
+        owner = OwnerDto(
+            id = 201,
+            email = "john.doe@cornell.edu",
+            fullName = "John Doe",
+            classYear = 2027
+        )
+    ),
+    RoomDto(
+        id = -2,
+        dorm = "McFaddin Hall, West Campus",
+        roomNumber = "422",
+        occupancy = 2,
+        amenities = listOf("Shared Bathroom", "Heating"),
+        description = null,
+        createdAt = "03/15/2025",
+        updatedAt = "04/15/2025",
+        isRoomListed = false,
+        owner = OwnerDto(
+            id = 202,
+            email = "jane.smith@cornell.edu",
+            fullName = "Jane Smith",
+            classYear = 2026
+        )
+    ),
+    RoomDto(
+        id = -3,
+        dorm = "Carl Becker House, North Campus",
+        roomNumber = "563",
+        occupancy = 3,
+        amenities = listOf("Mini Kitchenette", "In-unit Laundry"),
+        description = "Spacious triple with kitchenette",
+        createdAt = "02/10/2025",
+        updatedAt = "04/10/2025",
+        isRoomListed = true,
+        owner = OwnerDto(
+            id = 203,
+            email = "alex.lee@cornell.edu",
+            fullName = "Alex Lee",
+            classYear = 2025
+        )
+    )
 )
 
 @Composable
-fun DormCard(dorm: DormItem, onClick: () -> Unit = {}) {
+fun RoomCard(
+    room: RoomDto,
+    onClick: (RoomDto) -> Unit
+) {
+    // Map occupancy number to human-friendly string
+    val occupancyLabel = when (room.occupancy) {
+        1 -> "Single Dormitory"
+        2 -> "Double Dormitory"
+        3 -> "Triple Dormitory"
+        4 -> "Quad Dormitory"
+        else -> "${room.occupancy}-Person Dormitory"
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .clickable { onClick(room) },
         shape = MaterialTheme.shapes.medium,
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // Image placeholder
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -50,8 +111,12 @@ fun DormCard(dorm: DormItem, onClick: () -> Unit = {}) {
             )
             Spacer(Modifier.height(8.dp))
 
-            Text(dorm.title, style = MaterialTheme.typography.titleMedium)
-            Text(dorm.address, style = MaterialTheme.typography.bodyMedium)
+            Text(occupancyLabel, style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = "${room.roomNumber} ${room.dorm}",
+                style = MaterialTheme.typography.bodyMedium
+            )
 
             Spacer(Modifier.height(8.dp))
             Button(
@@ -64,16 +129,31 @@ fun DormCard(dorm: DormItem, onClick: () -> Unit = {}) {
     }
 }
 
+
 @Composable
 fun SearchScreen(
     viewModel: SearchViewModel = hiltViewModel(),
-    onDormClick: (DormItem) -> Unit
+    onRoomClick: (RoomDto) -> Unit
 ) {
     val filterQuery by viewModel.query.collectAsState()
-    val rooms by viewModel.rooms.collectAsState()
+    val dynamicRooms by viewModel.rooms.collectAsState()
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        // 1) Filter bar at top
+    // Combine sample data and real data
+    val allRooms = remember(filterQuery, dynamicRooms) {
+        sampleRooms + dynamicRooms
+    }
+
+    // Apply filter to the combined list
+    val filteredRooms = remember(filterQuery, allRooms) {
+        if (filterQuery.isBlank()) allRooms
+        else allRooms.filter { room ->
+            room.dorm.contains(filterQuery, ignoreCase = true)
+                    || room.roomNumber.contains(filterQuery, ignoreCase = true)
+                    || room.amenities.any { it.contains(filterQuery, ignoreCase = true) }
+        }
+    }
+
+    Column(Modifier.fillMaxSize()) {
         OutlinedTextField(
             value = filterQuery,
             onValueChange = { viewModel.query.value = it },
@@ -89,24 +169,19 @@ fun SearchScreen(
 
         Spacer(Modifier.height(4.dp))
 
-        // 2) Scrollable list of dorm cards
         LazyColumn(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth(),
             contentPadding = PaddingValues(
-                bottom = 56.dp,    // leave space for bottom nav
+                bottom = 56.dp,
                 start = 16.dp,
                 end = 16.dp
             ),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(rooms.map { roomDto ->
-                DormItem(title = roomDto.dorm, address = roomDto.roomNumber)
-            }) { dormItem ->
-                DormCard(dormItem) {
-                    onDormClick(dormItem)
-                }
+            items(filteredRooms) { room ->
+                RoomCard(room) { onRoomClick(it) }
             }
             item {
                 Button(
@@ -119,4 +194,6 @@ fun SearchScreen(
         }
     }
 }
+
+
 
