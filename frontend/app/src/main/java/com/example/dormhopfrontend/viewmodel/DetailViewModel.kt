@@ -24,7 +24,7 @@ class DetailViewModel @Inject constructor(
     val room: StateFlow<RoomDto?> = _room
 
     private val _features = MutableStateFlow<List<String>>(emptyList())
-    val  features: StateFlow<List<String>> = _features   // <── expose to UI
+    val  features: StateFlow<List<String>> = _features
 
     /** Called by the screen */
     fun load(roomId: Int) = viewModelScope.launch {

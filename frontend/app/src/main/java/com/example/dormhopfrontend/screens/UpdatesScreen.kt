@@ -1,5 +1,6 @@
 package com.example.dormhopfrontend.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -20,24 +21,49 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import com.example.dormhopfrontend.model.KnockResponse
 import com.example.dormhopfrontend.viewmodel.KnockViewModel
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun KnockList(
     knocks: List<KnockResponse>,
+    onItemClick: (Int) -> Unit,
     onCancel: (Int) -> Unit,
     onAccept: ((Int) -> Unit)? = null,
     onReject: ((Int) -> Unit)? = null
 ) {
+    val dtFormatter = remember {
+        DateTimeFormatter.ofPattern("MMM d, yyyy h:mm a")
+    }
+
     LazyColumn(
         Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = PaddingValues(16.dp)
     ) {
         items(knocks) { knock ->
+
+            // format created_at
+            val createdAtFormatted = remember(knock.created_at) {
+                runCatching {
+                    OffsetDateTime.parse(knock.created_at)
+                        .format(dtFormatter)
+                }.getOrNull() ?: knock.created_at
+            }
+            val acceptedAtFormatted = knock.accepted_at?.let { raw ->
+                runCatching {
+                    OffsetDateTime.parse(raw)
+                        .format(dtFormatter)
+                }.getOrNull()
+            }
+
             Card(
-                Modifier.fillMaxWidth(),
+                Modifier
+                    .fillMaxWidth()
+                    .clickable { onItemClick(knock.to_room.id) },
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
                 Column(Modifier.padding(16.dp)) {
@@ -48,12 +74,19 @@ fun KnockList(
                     Spacer(Modifier.height(4.dp))
                     Text("Status: ${knock.status}", style = MaterialTheme.typography.bodyMedium)
                     Spacer(Modifier.height(4.dp))
-                    Text("Sent: ${knock.created_at}", style = MaterialTheme.typography.bodySmall)
-                    knock.accepted_at?.let {
+                    Text(
+                        "Sent: $createdAtFormatted",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    acceptedAtFormatted?.let { acc ->
                         Spacer(Modifier.height(2.dp))
-                        Text("Accepted: $it", style = MaterialTheme.typography.bodySmall)
+                        Text(
+                            "Accepted: $acc",
+                            style = MaterialTheme.typography.bodySmall
+                        )
                     }
                     Spacer(Modifier.height(8.dp))
+
                     Row(
                         Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -84,6 +117,7 @@ fun KnockList(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UpdatesScreen(
+    navController: NavController,
     vm: KnockViewModel = hiltViewModel()
 ) {
     val sent by vm.sent.collectAsState()
@@ -107,10 +141,12 @@ fun UpdatesScreen(
         when (tab) {
             0 -> KnockList(
                 knocks = sent,
+                onItemClick = { id -> navController.navigate("detail/$id") },
                 onCancel = { id -> vm.deleteKnock(id) }
             )
             1 -> KnockList(
                 knocks = received,
+                onItemClick = { id -> navController.navigate("detail/$id") },
                 onCancel = {},
                 onAccept = { id -> vm.acceptKnock(id) },
                 onReject = { id -> vm.deleteKnock(id) }

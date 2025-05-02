@@ -122,8 +122,9 @@ private fun MainScaffold(authVM: AuthViewModel) {
             }
 
             composable("updates") {
-                UpdatesScreen()
+                UpdatesScreen(navController = navController)
             }
+
 
             composable("posting") {
                 MyPostingScreen(
