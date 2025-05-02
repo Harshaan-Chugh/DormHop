@@ -275,7 +275,7 @@ def recommend_rooms(current_user):
             / math.sqrt(len(user_amen) * len(json.loads(r.amenities)))
         ) if user_amen and json.loads(r.amenities) else 0.0)
         o_score = 1.0 if r.occupancy == user_occ else 0.5
-        total   = 0.7 * a_score + 0.3 * o_score
+        total = 0.7 * a_score + 0.3 * o_score
         scored.append((r, total))
 
     scored.sort(key=lambda x: x[1], reverse=True)
