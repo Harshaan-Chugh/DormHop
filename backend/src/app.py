@@ -87,7 +87,7 @@ def verify_id_token():
     Android sends {"id_token": "<google-id-token>"}.
     Backend verifies it, then issues its own JWT.
     """
-    data         = request.get_json(force=True) or {}
+    data = request.get_json(force=True) or {}
     id_token_str = data.get("id_token")
     if not id_token_str:
         return json.dumps({"error": "id_token required"}), 400
