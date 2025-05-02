@@ -64,6 +64,10 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    fun completeProfile() {
+        _needsProfile.value = false
+    }
+
     /** Exchange Google-token → JWT, persist, then pull profile. */
     fun pullProfile() {
         viewModelScope.launch {

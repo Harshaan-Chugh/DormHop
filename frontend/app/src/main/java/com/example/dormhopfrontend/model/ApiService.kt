@@ -36,6 +36,15 @@ data class VerifyResponse(
 )
 
 /**
+ * Payload to create or update a user.
+ */
+data class UpdateUserRequest(
+    @SerializedName("full_name")  val fullName:  String,
+    @SerializedName("class_year") val classYear: Int,
+    @SerializedName("is_room_listed") val isRoomListed: Boolean
+)
+
+/**
  * Payload to create or update a room.
  */
 data class UpdateRoomRequest(
@@ -69,6 +78,36 @@ data class RoomIdRequest(
     val roomId: Int
 )
 
+
+/**
+ * All the repsonses for the knocks
+ */
+data class KnockRequest(
+    @SerializedName("to_room_id") val toRoomId: Int
+)
+
+data class AcceptRequest(
+    val status: String = "accepted"
+)
+
+data class KnockResponse(
+    val id: Int,
+    val from_user: UserDto,
+    val to_room: RoomDto,
+    val status: String,
+    val created_at: String,
+    val accepted_at: String?,
+    val contacts: Contacts? = null
+)
+
+data class Contacts(
+    val requester_email: String,
+    val owner_email: String
+)
+
+data class KnocksListResponse(
+    val knocks: List<KnockResponse>
+)
 
 interface ApiService {
     /**
@@ -107,8 +146,24 @@ interface ApiService {
     /**
      * Create or update the authenticated user's room.
      */
+    @PATCH("users/me/")
+    suspend fun updateUser(
+        @Body body: UpdateUserRequest
+    ): Response<UserDto>
+
+    /**
+     * Update Room Details
+     */
     @PATCH("users/me/room/")
     suspend fun updateRoom(
+        @Body body: UpdateRoomRequest
+    ): Response<RoomDto>
+
+    /**
+     * Create Room Details
+     */
+    @POST("users/me/room/")
+    suspend fun createRoom(                    // <─ add this
         @Body body: UpdateRoomRequest
     ): Response<RoomDto>
 
@@ -131,4 +186,29 @@ interface ApiService {
 
     @POST("users/me/saved_rooms/")
     suspend fun saveRoom(@Body req: RoomIdRequest): Response<Unit>
+
+    /**
+     * Knock Room Endpoints
+     */
+    @POST("knocks/")
+    suspend fun sendKnock(
+        @Body req: KnockRequest
+    ): Response<KnockResponse>
+
+    @GET("knocks/sent/")
+    suspend fun listSentKnocks(): Response<KnocksListResponse>
+
+    @GET("knocks/received/")
+    suspend fun listReceivedKnocks(): Response<KnocksListResponse>
+
+    @PATCH("knocks/{id}/")
+    suspend fun acceptKnock(
+        @Path("id") knockId: Int,
+        @Body req: AcceptRequest
+    ): Response<KnockResponse>
+
+    @DELETE("knocks/{id}/")
+    suspend fun deleteKnock(
+        @Path("id") knockId: Int
+    ): Response<Unit>
 }

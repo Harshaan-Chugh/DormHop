@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.dormhopfrontend.model.RoomDto
+import com.example.dormhopfrontend.viewmodel.KnockViewModel
 import com.example.dormhopfrontend.viewmodel.SearchViewModel
 import kotlinx.coroutines.launch
 
@@ -25,8 +26,10 @@ import kotlinx.coroutines.launch
 fun RoomCard(
     room: RoomDto,
     isSaved: Boolean,
+    isKnocked: Boolean,
     onClick: (RoomDto) -> Unit,
-    onSaveClick: (RoomDto) -> Unit
+    onSaveClick: (RoomDto) -> Unit,
+    onKnockClick: (RoomDto) -> Unit
 ) {
     val occupancyLabel = when (room.occupancy) {
         1 -> "Single Dormitory"
@@ -62,14 +65,18 @@ fun RoomCard(
                 Text("${room.roomNumber} ${room.dorm}", style = MaterialTheme.typography.bodyMedium)
                 Spacer(Modifier.height(8.dp))
                 Button(
-                    onClick = { /* send knock… */ },
-                    contentPadding = PaddingValues(12.dp, 4.dp)
+                    onClick = { onKnockClick(room) },
+                    enabled = !isKnocked,
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
                 ) {
-                    Text("👋 Send a knock", style = MaterialTheme.typography.labelLarge)
+                    Text(
+                        text = if (isKnocked) "Knocked ✔" else "👋 Send a knock",
+                        style = MaterialTheme.typography.labelLarge
+                    )
                 }
             }
 
-            // 2) Heart in the top-right corner, on top of the column
+            // 2) Heart Icon to save the dorm
             IconButton(
                 onClick = { onSaveClick(room) },
                 modifier = Modifier
@@ -145,7 +152,6 @@ fun SearchScreen(
     viewModel: SearchViewModel = hiltViewModel(),
     onRoomClick: (RoomDto) -> Unit
 ) {
-    // --- hoist all flows into Compose state ---
     val query by viewModel.query.collectAsState()
     val rooms by viewModel.rooms.collectAsState()
     val savedIds by viewModel.savedIds.collectAsState()
@@ -155,6 +161,17 @@ fun SearchScreen(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
     var showBottomSheet by remember { mutableStateOf(false) }
+
+    //implements the knock features
+    val knockVm: KnockViewModel = hiltViewModel()
+    val sentKnocks by knockVm.sent.collectAsState()
+    val knockedIds by remember(sentKnocks) {
+        derivedStateOf { sentKnocks.map { it.to_room.id }.toSet() }
+    }
+
+    LaunchedEffect(Unit) {
+        knockVm.loadAll()
+    }
 
     Scaffold { paddingValues ->
         Column(
@@ -196,10 +213,12 @@ fun SearchScreen(
             ) {
                 items(rooms) { room ->
                     RoomCard(
-                        room       = room,
-                        isSaved    = room.id in savedIds,
-                        onClick    = { onRoomClick(room) },
-                        onSaveClick= { viewModel.toggleSave(room) }
+                        room = room,
+                        isSaved = room.id in savedIds,
+                        isKnocked = room.id in knockedIds,
+                        onClick = { onRoomClick(room) },
+                        onSaveClick = { viewModel.toggleSave(room) },
+                        onKnockClick = { knockVm.sendKnock(room.id) { } }
                     )
                 }
                 item {

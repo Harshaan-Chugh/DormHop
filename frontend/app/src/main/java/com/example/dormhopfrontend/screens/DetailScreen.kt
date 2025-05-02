@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.dormhopfrontend.model.RoomDto
 import com.example.dormhopfrontend.viewmodel.DetailViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -61,63 +62,74 @@ fun DetailScreen(
         ) {
             if (room == null) {
                 CircularProgressIndicator(Modifier.align(Alignment.Center))
-            } else {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp)
-                ) {
-                    // Placeholder map/image
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp)
-                            .background(Color.LightGray)
-                    )
-                    Spacer(Modifier.height(16.dp))
-
-                    // Occupancy label
-                    val occupancyLabel = when (room.occupancy) {
-                        1 -> "Single Dormitory"
-                        2 -> "Double Dormitory"
-                        3 -> "Triple Dormitory"
-
-                        else -> "${room.occupancy}-Person Dormitory"
-                    }
-                    Text(
-                        text = occupancyLabel,
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Spacer(Modifier.height(8.dp))
-
-                    // Room and Dorm info
-                    Text(
-                        text = "${room.dorm} ${room.roomNumber}",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Spacer(Modifier.height(8.dp))
-
-                    // Amenities as simple list
-                    if (room.amenities.isNotEmpty()) {
-                        Text("Amenities:", style = MaterialTheme.typography.titleSmall)
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            room.amenities.forEach { amenity ->
-                                Text("• $amenity", style = MaterialTheme.typography.bodyMedium)
-                            }
-                        }
-                    }
-
-                    // Description
-                    room.description?.takeIf { it.isNotBlank() }?.let { desc ->
-                        Spacer(Modifier.height(8.dp))
-                        Text("Description:", style = MaterialTheme.typography.titleSmall)
-                        Text(desc, style = MaterialTheme.typography.bodyMedium)
-                    }
-
-                    Spacer(Modifier.height(16.dp))
-                    // TODO: add "Send Knock" or other actions
-                }
+            } else{
+                RoomDetailsContent(room = room)
             }
+        }
+    }
+}
+
+
+//basically shows all teh content of the room
+@Composable
+fun RoomDetailsContent(
+    room: RoomDto,
+    ownerName : String? = null,
+    ownerClass: Int?    = null
+) {
+    val occupancyLabel = when (room.occupancy) {
+        1 -> "Single Dormitory"
+        2 -> "Double Dormitory"
+        3 -> "Triple Dormitory"
+        4 -> "Quad Dormitory"
+        else -> "${room.occupancy}-Person Dormitory"
+    }
+    val roomTitle = "${room.dorm} ${room.roomNumber}"
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        /* placeholder image / map */
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp)
+                .background(Color.LightGray)
+        )
+
+        Spacer(Modifier.height(16.dp))
+
+        /* main fields */
+        Text(occupancyLabel, style = MaterialTheme.typography.titleMedium)
+        Spacer(Modifier.height(4.dp))
+        Text(roomTitle,      style = MaterialTheme.typography.bodyMedium)
+
+        /* owner line – only if supplied */
+        if (ownerName != null && ownerClass != null) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "Posted by $ownerName · Class of $ownerClass",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+
+        /* amenities */
+        if (room.amenities.isNotEmpty()) {
+            Spacer(Modifier.height(8.dp))
+            Text("Amenities:", style = MaterialTheme.typography.titleSmall)
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                room.amenities.forEach { Text("• $it", style = MaterialTheme.typography.bodyMedium) }
+            }
+        }
+
+        /* description */
+        room.description?.takeIf { it.isNotBlank() }?.let {
+            Spacer(Modifier.height(8.dp))
+            Text("Description:", style = MaterialTheme.typography.titleSmall)
+            Text(it, style = MaterialTheme.typography.bodyMedium)
         }
     }
 }

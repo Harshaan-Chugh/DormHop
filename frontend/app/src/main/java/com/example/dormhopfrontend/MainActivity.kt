@@ -36,7 +36,9 @@ import com.example.dormhopfrontend.viewmodel.AuthViewModel
 import com.example.dormhopfrontend.ui.theme.DormHopFrontendTheme
 import dagger.hilt.android.AndroidEntryPoint
 import com.example.dormhopfrontend.screens.CreateProfileScreen
+import com.example.dormhopfrontend.screens.MyPostingScreen
 import com.example.dormhopfrontend.screens.SavedScreen
+import com.example.dormhopfrontend.screens.UpdatesScreen
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -45,31 +47,33 @@ class MainActivity : ComponentActivity() {
         setContent {
             DormHopFrontendTheme {
                 val authVM: AuthViewModel = hiltViewModel()
-
-                /* ───────── auth state ───────── */
                 val googleIdToken by authVM.googleIdToken.collectAsState(initial = null)
                 val jwt           by authVM.jwt.collectAsState(initial = null)
-                /*  Did the backend tell us the user is new?  */
-                val needsProfile  by authVM.needsProfile.collectAsState(initial = false)
-                /*  Optional: once we have a JWT we can also ask for /users/me
-                    and mark needsProfile = (user.currentRoom == null)
-                 */
+                val needsProfile  by authVM.needsProfile.collectAsState()
 
                 when {
-                    /* 1 ─ Sign-in flow  */
-                    googleIdToken == null -> RegistrationScreen(authVM::onGoogleIdToken)
+                    /* 1 ─ Sign-in flow */
+                    googleIdToken == null ->
+                        RegistrationScreen(authVM::onGoogleIdToken)
 
-                    /* 2 ─ Exchange Google-token → JWT  */
-                    jwt == null -> LoadingExchange(googleIdToken!!, authVM::exchangeForJwt)
+                    /* 2 ─ Exchange Google-token → JWT */
+                    jwt == null ->
+                        LoadingExchange(googleIdToken!!, authVM::exchangeForJwt)
 
-                    /* 3 ─ Real app UI  */
-                    else -> MainScaffold(needsProfile)
+                    /* 3 ─ Force them to finish profile if needed */
+                    needsProfile ->
+                        CreateProfileScreen(
+                            onDone = { authVM.completeProfile() }
+                        )
+
+                    /* 4 ─ Otherwise show the real app */
+                    else ->
+                        MainScaffold(authVM = authVM)
                 }
             }
         }
     }
 }
-
 /*──────────────── Helper composables ────────────────*/
 
 /** Simple full-screen progress while we swap tokens. */
@@ -82,71 +86,67 @@ class MainActivity : ComponentActivity() {
 
 /** The *real* scaffold once we have a JWT. */
 @Composable
-private fun MainScaffold(needsProfile: Boolean) {
+private fun MainScaffold(authVM: AuthViewModel) {
+    val needsProfile by authVM.needsProfile.collectAsState()
+
+    // 1) if they still need a profile, force them into it:
+    if (needsProfile) {
+        CreateProfileScreen(
+            onDone = { authVM.completeProfile() }
+        )
+        return
+    }
+
+    // 2) otherwise show the normal app
     val navController = rememberNavController()
     val navBackStack  by navController.currentBackStackEntryAsState()
     val currentRoute  = navBackStack?.destination?.route
 
-    val startDest = remember(needsProfile) {
-        if (needsProfile) "create_profile" else "search"
-    }
-
-    Scaffold(
-        bottomBar = {
-            if (currentRoute != "create_profile") {
-                NavigationBar {
-                    bottomNavItems.forEach { item ->
-                        NavigationBarItem(
-                            icon     = { Icon(item.icon, contentDescription = item.label) },
-                            label    = { Text(item.label) },
-                            selected = currentRoute == item.route,
-                            onClick  = {
-                                navController.navigate(item.route) {
-                                    popUpTo(navController.graph.startDestinationId) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState    = true
-                                }
-                            }
-                        )
+    Scaffold( bottomBar = {
+        NavigationBar {
+            bottomNavItems.forEach { item ->
+                NavigationBarItem(
+                    icon     = { Icon(item.icon, contentDescription = item.label) },
+                    label    = { Text(item.label) },
+                    selected = currentRoute == item.route,
+                    onClick  = {
+                        navController.navigate(item.route) {
+                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                            launchSingleTop = true
+                            restoreState    = true
+                        }
                     }
-                }
+                )
             }
         }
-    ) { inner ->
+    }) { inner ->
         Box(Modifier.fillMaxSize().padding(inner)) {
-            NavHost(navController, startDestination = startDest) {
-
-                // forced-once screen
-                composable("create_profile") {
-                    CreateProfileScreen {
-                        // after creation, go to search
-                        navController.popBackStack("search", false)
-                    }
-                }
-
+            NavHost(navController, startDestination = "search") {
                 composable("search") {
                     SearchScreen { room ->
                         navController.navigate("detail/${room.id}")
                     }
                 }
-
-                composable("updates")  { PlaceholderScreen("Updates") }
-
-                // ⇨ YOUR POSTING now reuses CreateProfileScreen so they can edit
+                composable("updates") { UpdatesScreen() }
+                //My Posting Screen
                 composable("posting") {
-                    CreateProfileScreen {
-                        // after editing, back to search
-                        navController.popBackStack("Your Posting", false)
-                    }
+                    MyPostingScreen(
+                        onEdit = { navController.navigate("edit_profile") }   // open editor
+                    )
                 }
-
+                //Create Profile Screen after clicking top right
+                composable("edit_profile") {
+                    CreateProfileScreen(
+                        onDone = {
+                            navController.popBackStack("posting", false)
+                        }
+                    )
+                }
                 composable("saved") {
                     SavedScreen { roomId ->
                         navController.navigate("detail/$roomId")
                     }
                 }
-                composable("inbox")    { PlaceholderScreen("Inbox")       }
-
                 composable("detail/{roomId}",
                     arguments = listOf(navArgument("roomId") { type = NavType.IntType })
                 ) { back ->
@@ -157,6 +157,7 @@ private fun MainScaffold(needsProfile: Boolean) {
         }
     }
 }
+
 
 // bottom-nav items and PlaceholderScreen as before
 private val bottomNavItems = listOf(

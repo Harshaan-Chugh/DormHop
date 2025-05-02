@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.dormhopfrontend.model.ApiService
 import com.example.dormhopfrontend.model.RoomRepository
 import com.example.dormhopfrontend.model.RoomDto
+import com.example.dormhopfrontend.model.UpdateUserRequest
 import com.example.dormhopfrontend.model.UserDto
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -219,11 +220,11 @@ class CreateProfileViewModel @Inject constructor(
                 }
 
                 val result: RoomDto? = repo.updateRoom(
-                    dorm       = _dorm.value,
-                    roomNumber = _roomNumber.value,
-                    occupancy  = occInt,
-                    amenities  = _amenities.value,
-                    description= _description.value.ifBlank { null }
+                    dorm        = _dorm.value,
+                    roomNumber  = _roomNumber.value,
+                    occupancy   = occInt,
+                    amenities   = _amenities.value,
+                    description = _description.value.ifBlank { null }
                 )
                 if (result != null) {
                     _done.value = true
@@ -236,4 +237,4 @@ class CreateProfileViewModel @Inject constructor(
             _saving.value = false
         }
     }
-}
+    }

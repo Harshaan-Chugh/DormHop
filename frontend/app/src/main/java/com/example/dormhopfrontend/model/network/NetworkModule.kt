@@ -29,7 +29,6 @@ object NetworkModule {
     @Provides @Singleton
     fun provideRetrofit(client: OkHttpClient): Retrofit =
         Retrofit.Builder()
-            /* TODO: Change the URL later to the deployed app*/
             .baseUrl("http://34.86.55.150/api/")   // emulator → your machine
             .client(client)
             .addConverterFactory(GsonConverterFactory.create())
