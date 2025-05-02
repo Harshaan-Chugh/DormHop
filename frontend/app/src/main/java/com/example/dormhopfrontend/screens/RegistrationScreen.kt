@@ -1,10 +1,11 @@
 package com.example.dormhopfrontend.screens
 
 import android.app.Activity
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -12,46 +13,38 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.dormhopfrontend.R
 import com.example.dormhopfrontend.SignInActivity
-import com.example.dormhopfrontend.ui.theme.DormHopFrontendTheme
+import com.example.dormhopfrontend.ui.theme.GoldAccent
+import com.example.dormhopfrontend.ui.theme.RedPrimary
 import kotlinx.coroutines.launch
 
-/**
- * A simple registration screen that kicks off your
- * SignInActivity.doGoogleSignIn(...) flow when tapped.
- */
 @Composable
 fun RegistrationScreen(
     onTokenReceived: (String) -> Unit
 ) {
-    val context = LocalContext.current
-    val scope   = rememberCoroutineScope()
-    var shouldRetry by remember { mutableStateOf(false) }
+    val context        = LocalContext.current as Activity
+    val scope          = rememberCoroutineScope()
+    var shouldRetry    by remember { mutableStateOf(false) }
 
-    // Launcher for the “Add Google Account” fallback
+    // Launcher for “Add Google Account” fallback
     val addAccountLauncher = rememberLauncherForActivityResult(
         contract = StartActivityForResult()
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            // User added a Google account → retry the flow
-            Toast
-                .makeText(context, "✅ Account added, retrying sign-in…", Toast.LENGTH_SHORT)
-                .show()
+            Toast.makeText(context, "✅ Account added, retrying…", Toast.LENGTH_SHORT).show()
             shouldRetry = true
         }
     }
 
-    // Retry once the user adds an account
+    // If user just added an account, retry sign-in once
     if (shouldRetry) {
-        Toast
-            .makeText(context, "🔄 Retrying Google Sign-In…", Toast.LENGTH_SHORT)
-            .show()
-
         LaunchedEffect(Unit) {
+            Toast.makeText(context, "🔄 Retrying Google Sign-In…", Toast.LENGTH_SHORT).show()
             SignInActivity.doGoogleSignIn(
                 context  = context,
                 scope    = scope,
@@ -62,68 +55,72 @@ fun RegistrationScreen(
         }
     }
 
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color    = MaterialTheme.colorScheme.background
+    // Full-screen red background
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.primary),
+        contentAlignment = Alignment.Center
     ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(24.dp)
         ) {
-            Card(
-                modifier   = Modifier
-                    .fillMaxWidth(0.9f)
-                    .padding(16.dp),
-                shape = RoundedCornerShape(12.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = stringResource(R.string.app_name),
-                        style = MaterialTheme.typography.headlineSmall
-                    )
-                    Spacer(Modifier.height(16.dp))
-                    Text(
-                        text = "Sign in",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Spacer(Modifier.height(24.dp))
-                    Button(
-                        onClick = {
-                            Toast
-                                .makeText(context, "👉 Starting Google Sign-In", Toast.LENGTH_SHORT)
-                                .show()
-                            scope.launch {
-                                SignInActivity.doGoogleSignIn(
-                                    context  = context,
-                                    scope    = scope,
-                                    launcher = addAccountLauncher,
-                                    login    = onTokenReceived
-                                )
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
-                        shape = RoundedCornerShape(24.dp)
-                    ) {
-                        Text("Sign in with Google")
+            // Logo at top
+            Image(
+                painter = painterResource(R.drawable.dormhop_logo),
+                contentDescription = "DormHop Logo",
+                modifier = Modifier
+                    .size(160.dp)
+                    .padding(bottom = 24.dp)
+            )
+
+            // App name
+            Text(
+                text = stringResource(R.string.app_name),
+                fontSize = 32.sp,
+                color = MaterialTheme.colorScheme.onPrimary,
+                style = MaterialTheme.typography.headlineMedium
+            )
+
+            Spacer(Modifier.height(16.dp))
+
+            // Optional subtitle
+            Text(
+                text = "",
+                color = MaterialTheme.colorScheme.onPrimary,
+                style = MaterialTheme.typography.bodyMedium
+            )
+
+            Spacer(Modifier.height(48.dp))
+
+            // Google-SignIn button
+            Button(
+                onClick = {
+                    Toast.makeText(context, "👉 Starting Google Sign-In", Toast.LENGTH_SHORT)
+                        .show()
+                    scope.launch {
+                        SignInActivity.doGoogleSignIn(
+                            context  = context,
+                            scope    = scope,
+                            launcher = addAccountLauncher,
+                            login    = onTokenReceived
+                        )
                     }
-                }
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondary
+                ),
+                shape = RoundedCornerShape(24.dp),
+                modifier = Modifier
+                    .fillMaxWidth(0.7f)
+                    .height(48.dp)
+            ) {
+                Text(
+                    text = "Sign in with Google",
+                    color = MaterialTheme.colorScheme.onSecondary
+                )
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun RegistrationScreenPreview() {
-    DormHopFrontendTheme {
-        RegistrationScreen(onTokenReceived = { /* no-op */ })
     }
 }

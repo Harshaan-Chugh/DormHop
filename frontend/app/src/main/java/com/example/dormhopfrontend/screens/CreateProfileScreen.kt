@@ -1,6 +1,8 @@
 /*  ui/ CreateProfileScreen.kt  */
 package com.example.dormhopfrontend.screens
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
@@ -14,34 +16,72 @@ import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.dormhopfrontend.R
+import com.example.dormhopfrontend.ui.theme.GoldAccent
+import com.example.dormhopfrontend.ui.theme.RedPrimary
 import com.example.dormhopfrontend.viewmodel.CreateProfileViewModel
 import com.example.dormhopfrontend.viewmodel.UiState
 
 @Composable
 fun CreateProfileScreen(
-    viewModel: CreateProfileViewModel = hiltViewModel(),
-    onDone: () -> Unit = {}
+    onLoginClicked: () -> Unit = {}
 ) {
-    val ui by viewModel.uiState.collectAsState()
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(RedPrimary),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(24.dp)
+        ) {
+            // Logo image
+            Image(
+                painter = painterResource(R.drawable.dormhop_logo),
+                contentDescription = "DormHop Logo",
+                modifier = Modifier
+                    .size(160.dp)
+                    .clip(MaterialTheme.shapes.medium)
+            )
 
-    LaunchedEffect(ui.done) {
-        if (ui.done) onDone()
-    }
+            Spacer(modifier = Modifier.height(24.dp))
 
-    Scaffold(
-        topBar = { StepTopBar(ui.step) },
-        bottomBar = { BottomButtons(ui, viewModel) }
-    ) { innerPadding ->
-        when (ui.step) {
-            1 -> PersonalStep(ui, viewModel, Modifier.padding(innerPadding))
-            2 -> DormStep(ui, viewModel, Modifier.padding(innerPadding))
+            // App name text
+            Text(
+                text = "DormHop",
+                fontSize = 32.sp,
+                color = MaterialTheme.colorScheme.onPrimary,
+                style = MaterialTheme.typography.headlineMedium
+            )
+
+            Spacer(modifier = Modifier.height(48.dp))
+
+            // Login button
+            Button(
+                onClick = onLoginClicked,
+                colors = ButtonDefaults.buttonColors(containerColor = GoldAccent),
+                modifier = Modifier
+                    .fillMaxWidth(0.7f)
+                    .height(48.dp),
+                shape = MaterialTheme.shapes.large
+            ) {
+                Text(
+                    text = "Log in with NetID",
+                    color = MaterialTheme.colorScheme.onSecondary
+                )
+            }
         }
     }
 }
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
