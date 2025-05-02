@@ -38,7 +38,7 @@
    → **201 Created** (new) | **200 OK** (returning)
 
    ```json
-   { "token": "<jwt>", "user": { … } }
+   { "token": "<jwt>", "user": {...} }
    ```
 
    *Valid only for `@cornell.edu`.*
