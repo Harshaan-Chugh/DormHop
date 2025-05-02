@@ -42,7 +42,7 @@ fun KnockList(
             ) {
                 Column(Modifier.padding(16.dp)) {
                     Text(
-                        text = "Room: ${knock.to_room.dorm} ${knock.to_room.roomNumber}",
+                        text = "Room: ${knock.to_room.roomNumber} ${knock.to_room.dorm} ",
                         style = MaterialTheme.typography.titleMedium
                     )
                     Spacer(Modifier.height(4.dp))

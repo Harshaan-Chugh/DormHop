@@ -211,4 +211,11 @@ interface ApiService {
     suspend fun deleteKnock(
         @Path("id") knockId: Int
     ): Response<Unit>
+
+
+    /**
+     * Use the webscraper to get community features
+     */
+    @GET("dorm_features/")
+    suspend fun getDormFeatures(): Response<DormFeaturesResponse>
 }

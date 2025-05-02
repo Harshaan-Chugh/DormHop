@@ -25,6 +25,8 @@ fun MyPostingScreen(
     val loading  by vm.loading.collectAsState()
     val errorMsg by vm.error.collectAsState()
 
+    LaunchedEffect(Unit) { vm.refresh() }
+
     Scaffold(
         topBar = {
             TopAppBar(

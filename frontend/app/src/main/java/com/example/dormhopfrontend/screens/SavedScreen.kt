@@ -76,7 +76,7 @@ fun SavedScreen(
                             )
                             Spacer(Modifier.height(4.dp))
                             Text(
-                                "${room.dorm} ${room.roomNumber}",
+                                "${room.roomNumber} ${room.dorm}",
                                 style = MaterialTheme.typography.bodyMedium
                             )
                             Spacer(Modifier.height(8.dp))

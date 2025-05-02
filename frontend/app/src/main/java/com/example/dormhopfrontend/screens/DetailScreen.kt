@@ -5,6 +5,8 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.AssistChip
@@ -26,6 +28,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.dormhopfrontend.model.RoomDto
 import com.example.dormhopfrontend.viewmodel.DetailViewModel
+import androidx.compose.runtime.getValue
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,6 +41,9 @@ fun DetailScreen(
 ) {
     val roomState = viewModel.room.collectAsState(initial = null)
     val room = roomState.value
+
+    val features by viewModel.features
+        .collectAsState(initial = emptyList())
 
     // Trigger load on first composition or roomId change
     LaunchedEffect(roomId) {
@@ -63,7 +71,7 @@ fun DetailScreen(
             if (room == null) {
                 CircularProgressIndicator(Modifier.align(Alignment.Center))
             } else{
-                RoomDetailsContent(room = room)
+                RoomDetailsContent(room = room!!, features = features)
             }
         }
     }
@@ -74,6 +82,7 @@ fun DetailScreen(
 @Composable
 fun RoomDetailsContent(
     room: RoomDto,
+    features: List<String> = emptyList(),
     ownerName : String? = null,
     ownerClass: Int?    = null
 ) {
@@ -86,9 +95,12 @@ fun RoomDetailsContent(
     }
     val roomTitle = "${room.dorm} ${room.roomNumber}"
 
+    val scrollState = rememberScrollState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(scrollState)
             .padding(16.dp)
     ) {
         /* placeholder image / map */
@@ -130,6 +142,21 @@ fun RoomDetailsContent(
             Spacer(Modifier.height(8.dp))
             Text("Description:", style = MaterialTheme.typography.titleSmall)
             Text(it, style = MaterialTheme.typography.bodyMedium)
+        }
+
+        /* community features */
+        if (features.isNotEmpty()) {
+            Spacer(Modifier.height(12.dp))
+            Text("Community features:", style = MaterialTheme.typography.titleSmall)
+
+            Column(
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.padding(start = 8.dp)   // small indent
+            ) {
+                features.forEach { feat ->
+                    Text("- $feat", style = MaterialTheme.typography.bodyMedium)
+                }
+            }
         }
     }
 }

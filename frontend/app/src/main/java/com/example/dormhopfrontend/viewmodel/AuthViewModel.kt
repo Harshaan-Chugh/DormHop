@@ -55,6 +55,7 @@ class AuthViewModel @Inject constructor(
                 resp.body()?.let { body ->
                     _jwt.value = body.token
                     tokenManager.token = body.token
+                    pullProfile()
                 }
             } else {
                 // BACKEND REJECTED YOUR ID TOKEN → RESET TO PHASE 1
