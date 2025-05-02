@@ -67,6 +67,9 @@ def auth_required(view_fn):
         data = decode_token(token)
         if not data:
             return json.dumps({"error": "Invalid or expired token"}), 401
+        
+        if not data["email"].endswith("@cornell.edu"):
+            return json.dumps({"error": "Cornell account required"}), 403
 
         user = User.query.get(data["user_id"])
         if not user:

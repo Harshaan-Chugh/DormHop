@@ -8,18 +8,18 @@ db = SQLAlchemy()
 # Saved‐rooms many-to-many table
 saved_rooms = db.Table(
     "saved_rooms",
-    db.Column("user_id",  db.Integer, db.ForeignKey("users.id"), primary_key=True),
-    db.Column("room_id",  db.Integer, db.ForeignKey("rooms.id"), primary_key=True),
+    db.Column("user_id", db.Integer, db.ForeignKey("users.id"), primary_key=True),
+    db.Column("room_id", db.Integer, db.ForeignKey("rooms.id"), primary_key=True),
 )
 
 class Room(db.Model):
     __tablename__ = "rooms"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    dorm = db.Column(db.String,  nullable=False)
-    room_number = db.Column(db.String,  nullable=False)
+    dorm = db.Column(db.String, nullable=False)
+    room_number = db.Column(db.String, nullable=False)
     occupancy = db.Column(db.Integer, nullable=False)
-    amenities = db.Column(db.Text,    nullable=False)  # JSON list
-    description = db.Column(db.String,  nullable=True)
+    amenities = db.Column(db.Text, nullable=False)  # JSON list
+    description = db.Column(db.String, nullable=True)
     owner_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, 
