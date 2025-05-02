@@ -3,7 +3,7 @@ from datetime import datetime
 from db import db, User, Room
 from app import app
 
-DORMS = ["Keeton House","Cascadilla Hall","Flora Rose","Russell","Noyes","Donlon"]
+DORMS = ["Barbara McClintock Hall","Balch Hall","Mary Donlon Hall","Mews Hall","Clara Dickson Hall"]
 
 def seed(n=20):
     with app.app_context():

@@ -1,8 +1,13 @@
 version: '3.8'
 services:
   web:
-    image: harshaan999/dormhop:v2.0.0
+    image: harshaan999/dormhop:v3.0.0
     ports:
       - "80:5000"
     env_file:
       - .env
+    command: >
+      sh -c "
+        python seed_data.py &&
+        python app.py
+      "
