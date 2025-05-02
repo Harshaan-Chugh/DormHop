@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 src/.env
 *.db
 __pycache__/
@@ -5,3 +6,13 @@ __pycache__/
 src/venv/*
 src/instance
 src/venv
+=======
+backend/src/.env
+*.db
+__pycache__/
+.DS_Store
+backend/src/venv/*
+backend/src/instance
+backend/src/venv
+backend/src/app-smoketest.py
+>>>>>>> b415288ab12c93f049217ef3a1cbb40ddf906c9c

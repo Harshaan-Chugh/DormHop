@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "128583646853",
+    "project_id": "dormhop-cloud",
+    "storage_bucket": "dormhop-cloud.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:128583646853:android:c7938cddf5bd1a9aa633ec",
+        "android_client_info": {
+          "package_name": "com.example.dormhopfrontend"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "128583646853-6sar55o56j2pt1aunrjermt1eufk707t.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.dormhopfrontend",
+            "certificate_hash": "1ac69e3d1ae4ee4eaf7d8146872bfdc30fbf2ca7"
+          }
+        },
+        {
+          "client_id": "128583646853-nanl6sp07i8ueuvejrqogqq3jvfr5r5v.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.dormhopfrontend",
+            "certificate_hash": "ea1163ec95dbc6d3d7cbab764d215bbd0c490ac0"
+          }
+        },
+        {
+          "client_id": "128583646853-sh4ppit7broikmphu0q85es2i2rtk05i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB1xtoxPH4e3kGX0bkl0RanC_kf1oQH83o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "128583646853-sh4ppit7broikmphu0q85es2i2rtk05i.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
