@@ -62,10 +62,8 @@ class KnockViewModel @Inject constructor(
             val resp = repo.accept(id)
             val knock = resp.body()
             if (knock != null) {
-                // accepted successfully, reload lists
                 loadAll()
             } else {
-                // set a helpful error message
                 _error.value = "Accept failed: ${resp.code()} ${resp.message()}"
             }
         }

@@ -36,6 +36,7 @@ import com.example.dormhopfrontend.viewmodel.AuthViewModel
 import com.example.dormhopfrontend.ui.theme.DormHopFrontendTheme
 import dagger.hilt.android.AndroidEntryPoint
 import com.example.dormhopfrontend.screens.CreateProfileScreen
+import com.example.dormhopfrontend.screens.InboxScreen
 import com.example.dormhopfrontend.screens.MyPostingScreen
 import com.example.dormhopfrontend.screens.SavedScreen
 import com.example.dormhopfrontend.screens.UpdatesScreen
@@ -152,6 +153,9 @@ private fun MainScaffold(authVM: AuthViewModel) {
                 ) { back ->
                     val id = back.arguments!!.getInt("roomId")
                     DetailScreen(id) { navController.popBackStack() }
+                }
+                composable("inbox") {
+                    InboxScreen()
                 }
             }
         }
