@@ -111,7 +111,7 @@ fun RegistrationScreen(
                     .height(48.dp)
             ) {
                 Text(
-                    text = "Sign in with Google",
+                    text = "Sign in with Cornell Email",
                     color = MaterialTheme.colorScheme.onSecondary
                 )
             }

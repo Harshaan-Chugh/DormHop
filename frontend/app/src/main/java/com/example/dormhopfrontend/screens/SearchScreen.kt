@@ -58,7 +58,7 @@ fun RoomCard(
     onSaveClick: (RoomDto) -> Unit,
     onKnockClick: (RoomDto) -> Unit
 ) {
-    // human-friendly occupancy label
+    // human‐friendly occupancy label
     val occupancyLabel = when (room.occupancy) {
         1 -> "Single Dormitory"
         2 -> "Double Dormitory"
@@ -66,60 +66,63 @@ fun RoomCard(
         4 -> "Quad Dormitory"
         else -> "${room.occupancy}-Person Dormitory"
     }
-    // lookup the drawable
+    // lookup the drawable (or placeholder)
     val imageRes = room.toImageRes()
 
     Card(
-        modifier  = Modifier.fillMaxWidth(),
+        modifier  = Modifier
+            .fillMaxWidth()
+            .clickable { onClick(room) },
         shape     = MaterialTheme.shapes.medium,
         elevation = CardDefaults.cardElevation(4.dp),
         colors    = CardDefaults.cardColors(containerColor = Color(0xFFF8F0EE))
     ) {
-        Box {
-            Column(
-                modifier = Modifier
+        Column(modifier = Modifier.padding(16.dp)) {
+            // 1) Photo
+            Image(
+                painter           = painterResource(id = imageRes),
+                contentDescription= "${room.dorm} photo",
+                contentScale      = ContentScale.Crop,
+                modifier          = Modifier
                     .fillMaxWidth()
-                    .clickable { onClick(room) }
-                    .padding(16.dp)
-            ) {
-                // real photo (or placeholder)
-                Image(
-                    painter           = painterResource(imageRes),
-                    contentDescription = "${room.dorm} photo",
-                    contentScale      = ContentScale.Crop,
-                    modifier          = Modifier
-                        .fillMaxWidth()
-                        .height(120.dp)
-                )
-                Spacer(Modifier.height(8.dp))
-                Text(occupancyLabel, style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(4.dp))
-                Text("${room.roomNumber} ${room.dorm}", style = MaterialTheme.typography.bodyMedium)
-                Spacer(Modifier.height(8.dp))
+                    .height(120.dp)
+            )
+            Spacer(Modifier.height(8.dp))
 
-                Button(
-                    onClick        = { onKnockClick(room) },
-                    enabled        = !isKnocked,
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
-                ) {
-                    Text(
-                        text = if (isKnocked) "Knocked ✔" else "👋 Send a knock",
-                        style = MaterialTheme.typography.labelLarge
+            // 2) Occupancy label
+            Text(occupancyLabel, style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(4.dp))
+
+            // 3) Dorm name + heart icon
+            Row(
+                modifier            = Modifier.fillMaxWidth(),
+                verticalAlignment   = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text  = "${room.roomNumber} ${room.dorm}",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                IconButton(onClick = { onSaveClick(room) }) {
+                    Icon(
+                        imageVector      = if (isSaved) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        contentDescription = if (isSaved) "Unsave dorm" else "Save dorm",
+                        tint             = if (isSaved) Color.Red else LocalContentColor.current
                     )
                 }
             }
 
-            // Save/un-save heart
-            IconButton(
-                onClick  = { onSaveClick(room) },
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(12.dp)
+            Spacer(Modifier.height(8.dp))
+
+            // 4) Knock button
+            Button(
+                onClick        = { onKnockClick(room) },
+                enabled        = !isKnocked,
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
             ) {
-                Icon(
-                    imageVector     = if (isSaved) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                    contentDescription = if (isSaved) "Unsave dorm" else "Save dorm",
-                    tint             = if (isSaved) Color.Red else LocalContentColor.current
+                Text(
+                    text  = if (isKnocked) "Knocked ✔" else "👋 Send a knock",
+                    style = MaterialTheme.typography.labelLarge
                 )
             }
         }
