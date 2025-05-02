@@ -98,10 +98,23 @@ fun RoomCard(
 private fun FilterSheetContent(
     selectedOccupancies: Set<Int>,
     selectedCampuses: Set<String>,
+    showRecommended: Boolean,
     onOccupancyToggle: (Int, Boolean) -> Unit,
     onCampusToggle: (String, Boolean) -> Unit,
+    onRecommendedToggle: (Boolean)->Unit,
     onApply: () -> Unit
 ) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Switch(
+            checked = showRecommended,
+            onCheckedChange = onRecommendedToggle
+        )
+        Spacer(Modifier.width(8.dp))
+        Text("Sort by Recommended")
+    }
+
+    Spacer(Modifier.height(24.dp))
+
     Column(Modifier.padding(16.dp)) {
         Text("Filter by occupancy", style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.height(8.dp))
@@ -157,6 +170,7 @@ fun SearchScreen(
     val savedIds by viewModel.savedIds.collectAsState()
     val selectedOccs by viewModel.selectedOccupancies.collectAsState()
     val selectedCampuses by viewModel.selectedCampuses.collectAsState()
+    val showRec by viewModel.showRecommended.collectAsState()
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
@@ -243,10 +257,12 @@ fun SearchScreen(
         ) {
             FilterSheetContent(
                 selectedOccupancies = selectedOccs,
-                selectedCampuses = selectedCampuses,
-                onOccupancyToggle = { occ, on -> viewModel.toggleOccupancy(occ, on) },
-                onCampusToggle = { campus, on -> viewModel.toggleCampus(campus, on) },
-                onApply = {
+                selectedCampuses    = selectedCampuses,
+                showRecommended     = showRec,                 // ← pass through
+                onOccupancyToggle   = { occ, on -> viewModel.toggleOccupancy(occ, on) },
+                onCampusToggle      = { campus, on -> viewModel.toggleCampus(campus, on) },
+                onRecommendedToggle = { viewModel.setShowRecommended(it) },
+                onApply             = {
                     showBottomSheet = false
                     scope.launch { sheetState.hide() }
                 }

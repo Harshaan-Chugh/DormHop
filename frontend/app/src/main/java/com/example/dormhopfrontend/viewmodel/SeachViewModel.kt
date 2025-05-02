@@ -8,6 +8,7 @@ import com.example.dormhopfrontend.model.RoomDto
 import com.example.dormhopfrontend.model.RoomIdRequest
 import com.example.dormhopfrontend.model.RoomRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,6 +24,9 @@ class SearchViewModel @Inject constructor(
     private val repo: RoomRepository,
     private val api: ApiService
 ) : ViewModel() {
+    // Recommendations
+    private val _recommendedRooms = MutableStateFlow<List<RoomDto>>(emptyList())
+    val showRecommended           = MutableStateFlow(false)
 
     // 1. Search + filters
     val query               = MutableStateFlow("")
@@ -33,13 +37,22 @@ class SearchViewModel @Inject constructor(
     private val _allRooms = MutableStateFlow<List<RoomDto>>(emptyList())
 
     // 3. Combined search + filter
-    val rooms: StateFlow<List<RoomDto>> = combine(
+    private val sourceRooms: Flow<List<RoomDto>> = combine(
         _allRooms,
+        _recommendedRooms,
+        showRecommended
+    ) { all, recs, showRec ->
+        if (showRec) recs else all
+    }
+
+    // 2️⃣ stage-two combine: filter that list by your 4 criteria
+    val rooms: StateFlow<List<RoomDto>> = combine(
+        sourceRooms,
         query,
         selectedOccupancies,
         selectedCampuses
-    ) { list, q, occs, camps ->
-        list.filter { room ->
+    ) { baseList, q, occs, camps ->
+        baseList.filter { room ->
             (occs.isEmpty() || room.occupancy in occs) &&
                     (camps.isEmpty() || room.campus in camps) &&
                     (q.isBlank()
@@ -57,6 +70,9 @@ class SearchViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
+            //load the recommended if applicable
+            _allRooms.value         = repo.listRooms()
+            _recommendedRooms.value = repo.recommendRooms()
             // load public listings
             _allRooms.value = repo.listRooms()
 
@@ -71,6 +87,10 @@ class SearchViewModel @Inject constructor(
                 _savedIds.value = ids
             }
         }
+    }
+
+    fun setShowRecommended(on: Boolean) {
+        showRecommended.value = on
     }
 
     fun toggleOccupancy(occupancy: Int, isSelected: Boolean) {
