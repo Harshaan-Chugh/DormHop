@@ -6,8 +6,3 @@ services:
       - "80:5000"
     env_file:
       - .env
-    command: >
-      sh -c "
-        python seed_data.py &&
-        python app.py
-      "
