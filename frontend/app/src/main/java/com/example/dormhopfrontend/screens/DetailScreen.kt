@@ -32,6 +32,8 @@ fun DetailScreen(
     val roomState = viewModel.room.collectAsState(initial = null)
     val room      = roomState.value
 
+    val features  by viewModel.features.collectAsState(initial = emptyList())
+
     // load (or reload) whenever roomId changes
     LaunchedEffect(roomId) {
         Log.d("DetailScreen", "Loading room $roomId")
@@ -60,7 +62,10 @@ fun DetailScreen(
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             } else {
                 // once loaded, show the shared details content
-                RoomDetailsContent(room = room)
+                RoomDetailsContent(
+                    room = room,
+                    features = features
+                )
             }
         }
     }
@@ -73,6 +78,7 @@ fun DetailScreen(
 @Composable
 fun RoomDetailsContent(
     room: RoomDto,
+    features: List<String> = emptyList(),
     ownerName: String? = null,
     ownerClass: Int?  = null
 ) {
@@ -99,12 +105,12 @@ fun RoomDetailsContent(
     ) {
         // 1) the dorm photo
         Image(
-            painter           = painterResource(id = imageResId),
-            contentDescription= "${room.dorm} photo",
-            modifier          = Modifier
+            painter = painterResource(id = imageResId),
+            contentDescription = "${room.dorm} photo",
+            modifier = Modifier
                 .fillMaxWidth()
                 .height(200.dp),
-            contentScale      = ContentScale.Crop
+            contentScale = ContentScale.Crop
         )
 
         Spacer(Modifier.height(16.dp))
@@ -150,5 +156,16 @@ fun RoomDetailsContent(
                 Text("Description:", style = MaterialTheme.typography.titleSmall)
                 Text(it, style = MaterialTheme.typography.bodyMedium)
             }
+
+        if (features.isNotEmpty()) {
+            Spacer(Modifier.height(12.dp))
+            Text("Community features:", style = MaterialTheme.typography.titleSmall)
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.padding(start = 8.dp)) {
+                features.forEach { feat ->
+                    Text("• $feat", style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+        }
     }
 }

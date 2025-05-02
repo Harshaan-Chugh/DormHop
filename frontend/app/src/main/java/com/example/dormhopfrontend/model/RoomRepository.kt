@@ -28,25 +28,6 @@ class RoomRepository @Inject constructor(
             emptyList()
         }
     }
-    //make a new room
-    suspend fun upsertRoom(
-        dorm: String,
-        roomNumber: String,
-        occupancy: Int,
-        amenities: List<String>,
-        description: String?
-    ): RoomDto? = try {
-        val body = UpdateRoomRequest(dorm, roomNumber, occupancy, amenities, description)
-        val resp = api.updateRoom(body)             // PATCH first
-        when {
-            resp.isSuccessful -> resp.body()        // updated ✓
-            resp.code() == 404 -> {
-                val created = api.createRoom(body)   // add this endpoint to ApiService
-                if (created.isSuccessful) created.body() else null
-            }
-            else -> null
-        }
-    } catch (t: Throwable) { null }
 
     /**
      * Fetch one room by ID, or null on failure.
