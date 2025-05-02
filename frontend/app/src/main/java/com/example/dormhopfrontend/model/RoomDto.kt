@@ -12,7 +12,8 @@ data class RoomDto(
     @SerializedName("created_at")    val createdAt: String,
     @SerializedName("updated_at")    val updatedAt: String,
     @SerializedName("is_room_listed")val isRoomListed: Boolean,
-    @SerializedName("owner")         val owner: OwnerDto
+    @SerializedName("owner")         val owner: OwnerDto,
+    @SerializedName("campus")         val campus: String
 )
 
 data class OwnerDto(

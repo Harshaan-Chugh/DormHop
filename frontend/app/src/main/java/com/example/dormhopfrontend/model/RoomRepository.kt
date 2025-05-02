@@ -5,7 +5,6 @@ import android.util.Log
 import javax.inject.Inject
 import javax.inject.Singleton
 
-
 @Singleton
 class RoomRepository @Inject constructor(
     private val api: ApiService
@@ -29,17 +28,20 @@ class RoomRepository @Inject constructor(
         }
     }
 
-    /** Fetch one room by ID, or null on failure */
+    /**
+     * Fetch one room by ID, or null on failure.
+     */
     suspend fun getRoomById(roomId: Int): RoomDto? {
         return try {
             val resp = api.getRoom(roomId)
-            if (resp.isSuccessful) resp.body()
-            else {
-                Log.e("RoomRepo", "getRoomById failed: ${resp.code()} ${resp.message()}")
+            if (resp.isSuccessful) {
+                resp.body()
+            } else {
+                Log.e(TAG, "getRoomById failed: ${resp.code()} ${resp.message()}")
                 null
             }
-        } catch(e: Exception) {
-            Log.e("RoomRepo", "Exception in getRoomById", e)
+        } catch (e: Exception) {
+            Log.e(TAG, "Exception in getRoomById", e)
             null
         }
     }
@@ -96,7 +98,7 @@ class RoomRepository @Inject constructor(
     /**
      * Toggles whether the user's room is publicly listed.
      *
-     * @return the updated listing flag
+     * @return the updated listing flag, or null on failure
      */
     suspend fun setRoomVisibility(isListed: Boolean): Boolean? {
         return try {
@@ -111,5 +113,13 @@ class RoomRepository @Inject constructor(
             Log.e(TAG, "Exception in setRoomVisibility", e)
             null
         }
+    }
+
+    /**
+     * Stub for paging: fetches the next “page” of rooms.
+     * Currently just re‐calls listRooms().
+     */
+    suspend fun loadNextPage(): List<RoomDto> {
+        return listRooms()
     }
 }

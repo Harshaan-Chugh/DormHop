@@ -71,17 +71,11 @@ fun RegistrationScreen(
                 painter = painterResource(R.drawable.dormhop_logo),
                 contentDescription = "DormHop Logo",
                 modifier = Modifier
-                    .size(160.dp)
+                    .size(300.dp)
                     .padding(bottom = 24.dp)
             )
 
-            // App name
-            Text(
-                text = stringResource(R.string.app_name),
-                fontSize = 32.sp,
-                color = MaterialTheme.colorScheme.onPrimary,
-                style = MaterialTheme.typography.headlineMedium
-            )
+
 
             Spacer(Modifier.height(16.dp))
 
