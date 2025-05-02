@@ -135,7 +135,7 @@ private fun MainScaffold(needsProfile: Boolean) {
                 composable("posting") {
                     CreateProfileScreen {
                         // after editing, back to search
-                        navController.popBackStack("search", false)
+                        navController.popBackStack("Your Posting", false)
                     }
                 }
 

@@ -29,55 +29,24 @@ import com.example.dormhopfrontend.ui.theme.RedPrimary
 import com.example.dormhopfrontend.viewmodel.CreateProfileViewModel
 import com.example.dormhopfrontend.viewmodel.UiState
 
+
 @Composable
 fun CreateProfileScreen(
-    onLoginClicked: () -> Unit = {}
+    viewModel: CreateProfileViewModel = hiltViewModel(),
+    onDone: () -> Unit = {}
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(RedPrimary),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(24.dp)
-        ) {
-            // Logo image
-            Image(
-                painter = painterResource(R.drawable.dormhop_logo),
-                contentDescription = "DormHop Logo",
-                modifier = Modifier
-                    .size(160.dp)
-                    .clip(MaterialTheme.shapes.medium)
-            )
+    val ui by viewModel.uiState.collectAsState()
+    LaunchedEffect(ui.done) {
+        if (ui.done) onDone()
+    }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // App name text
-            Text(
-                text = "DormHop",
-                fontSize = 32.sp,
-                color = MaterialTheme.colorScheme.onPrimary,
-                style = MaterialTheme.typography.headlineMedium
-            )
-
-            Spacer(modifier = Modifier.height(48.dp))
-
-            // Login button
-            Button(
-                onClick = onLoginClicked,
-                colors = ButtonDefaults.buttonColors(containerColor = GoldAccent),
-                modifier = Modifier
-                    .fillMaxWidth(0.7f)
-                    .height(48.dp),
-                shape = MaterialTheme.shapes.large
-            ) {
-                Text(
-                    text = "Log in with NetID",
-                    color = MaterialTheme.colorScheme.onSecondary
-                )
-            }
+    Scaffold(
+        topBar = { StepTopBar(ui.step) },
+        bottomBar = { BottomButtons(ui, viewModel) }
+    ) { inner ->
+        when (ui.step) {
+            1 -> PersonalStep(ui, viewModel, Modifier.padding(inner))
+            2 -> DormStep(ui, viewModel, Modifier.padding(inner))
         }
     }
 }
