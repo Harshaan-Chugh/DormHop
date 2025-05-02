@@ -1,365 +1,92 @@
-# Cornell DormHop API
-#### Description: A Cornell-specific room-swap platform that lets students list their current dorm rooms—with amenities, and preferences—browse others’ listings, “love” interesting rooms, and send knocks (swap requests) that open a private negotiation workflow while keeping contact details hidden until both sides agree. It streamlines the post-selection housing shuffle by matching students quickly and transparently, replacing ad-hoc group chats and scattered online postings with a structured, searchable market.
-
-## General Information
-- **Status Codes**: 200 OK, 201
-
 # Cornell DormHop
-#### Description: A Cornell-specific room-swap platform that lets students list their current dorm rooms—with amenities, and preferences—browse others’ listings, “love” interesting rooms, and send knocks (swap requests) that open a private negotiation workflow while keeping contact details hidden until both sides agree. It streamlines the post-selection housing shuffle by matching students quickly and transparently, replacing ad-hoc group chats and scattered online postings with a structured, searchable market.
+### Cornell-only room-swap app: list your dorm, browse & bookmark listings, and send mutual “knocks” to privately negotiate swaps once both sides agree.
+### Streamlines the post-selection housing shuffle by matching students quickly and transparently, replacing ad-hoc group chats and scattered online postings with a structured, searchable market.
 
 ## General Information
 - **Authentication Flow**:
   1. Users sign in through Cornell Google OAuth
   2. After successful OAuth, server generates a JWT for subsequent requests
-  3. Client includes JWT in Authorization header for all API calls
+  3. Client includes JWT in Authorization header for all API calls, preventing re-authentication with Google in every API call.
 
-- **How JWT works with OAuth**:
-  - OAuth handles initial authentication (proving you're a Cornell user)
-  - JWTs handles subsequent requests (maintaining session state)
-  - Prevents having to re-authenticate with Google for every API call
-
-- **Content-Type**: application/json
 - **Base URL**: `/api`
-- **Error Responses**: Include message and details fields
 - **Token Contents**:
   - User ID
   - Cornell Email
-  - Role/permissions
+  - Role
   - Expiration time
-
-- **UUID Usage**:
-  - Universally Unique Identifier
-  - 32 hexadecimal digits displayed in 5 groups
-  - Example: `123e4567-e89b-12d3-a456-426614174000`
 
 - **Authorization Header**:
   - Format: `Authorization: Bearer <jwt_token>`
-  - The word "Bearer" indicates that whoever bears (possesses) this token has access
-  - Required for all endpoints except `/api/auth/*`
+  - Whoever bears (possesses) this token has access to all endpoints.
   - Example:
     ```http
-    Authorization: Bearer eyJhbGciOiJIUzI1NiIsInT5cCI...
+    Authorization: Bearer brAinRotTokenGciOiJIUzI1NiIsInT5cCI...
     ```
-  - The token is obtained after login/registration and must be included in every subsequent request. It tells the server who you are and expires after a set time / on logout
 
-<<<<<<< HEAD
-Example Request:
-```http
-GET /api/users/me HTTP/1.1
-Host: api.dormhop.cornell.edu
-Authorization: Bearer eyJhbGciOiJIUzI1...
-Content-Type: application/json
-```
 
-Example:
-```
-{
-  "user_id": "123",
-  "email": "netid@cornell.edu",
-  "exp": 1682506874
-}
+## 🔐 Authentication (OAuth and JWT)
 
-Turns into: eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiMTIzIiwiZW1haWwiOiJuZXRpZEBjb3JuZWxsLmVkdSIsImV4cCI6MTY4MjUwNjg3NH0.ABC123signature
-```
-## 1. Authentication
+1. **Client obtains a Google ID-token** from Cornell-restricted OAuth.
+2. **Exchange for JWT**
 
-### 1.1 Verify Google ID Token
-**POST** `/api/auth/verify_id_token`
+   **POST** `/auth/verify_id_token`
 
-The ID token verification endpoint is the entry point for all authentication. When a user signs in with their Cornell Google account, the client obtains a Google ID token. This token is sent to our backend for verification, which checks that it's valid and from a @cornell.edu account. Upon successful verification, we generate our own JWT that the client will use for all subsequent requests. For new users, we create an account with basic info from Google OAuth. Returning users receive their existing profile data.
+   ```json
+   { "id_token": "<google-id-token>" }
+   ```
 
-Headers:
-```http
-Content-Type: application/json
-```
+   → **201 Created** (new) | **200 OK** (returning)
 
-Request:
-```json
-{
-    "id_token": "ya29.A0ARrdaMxyz...<google-id-token>..."
-}
-```
+   ```json
+   { "token": "<jwt>", "user": { … } }
+   ```
 
-Response (New User):
-```json
-<HTTP STATUS CODE 201>
-{
-    "token": "<jwt>",
-    "user": {
-        "id": "uuid",
-        "email": "netid@cornell.edu",
-        "full_name": "User Name",
-        "class_year": 9999,
-        "created_at": "2025-04-23T19:15:00Z",
-        "current_room": null,
-        "is_room_listed": false
-    }
-}
-```
+   *Valid only for `@cornell.edu`.*
 
-Response (Returning User):
-```json
-<HTTP STATUS CODE 200>
-{
-    "token": "<jwt>",
-    "user": {
-        "id": "uuid",
-        "email": "netid@cornell.edu",
-        "full_name": "User Name",
-        "class_year": 2025,
-        "created_at": "2025-04-23T19:15:00Z",
-        "current_room": {
-            "dorm": "Keeton House",
-            "room_number": "314",
-            "occupancy": 2,
-            "amenities": ["private bathroom", "lake view"],
-            "description": "Sunny double on 3rd floor"
-        },
-        "is_room_listed": false
-    }
-}
-```
-
-Error Responses:
-```json
-<HTTP STATUS CODE 400>
-{
-    "error": "id_token required"
-}
-
-<HTTP STATUS CODE 401>
-{
-    "error": "Invalid Google ID token"
-}
-
-<HTTP STATUS CODE 403>
-{
-    "error": "Cornell account required"
-}
-```
-
-Notes:
-- ID token must be from Google Sign-In with Cornell domain
-- New users get placeholder class year (9999)
-- Token in response is a JWT for subsequent requests
-- System determines if user is new based on email
-
-## 2. Users & Rooms
-
-### 2.1 Get Profile with Room
-**GET** `/api/users/me`
-
-Headers:
-```http
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInT5cCI...
-```
-
-Response:
-```json
-<HTTP STATUS CODE 200>
-{
-    "id": "uuid",
-    "email": "br11@cornell.edu",
-    "full_name": "Bob Ross",
-    "class_year": 1950,
-    "auto_reject_triple": false,
-    "created_at": "2025-04-23T19:15:00Z",
-    "current_room": {
-        "dorm": "Cascadilla Hall",
-        "room_number": "314",
-        "occupancy": 2,
-        "amenities": ["gorge view"],
-        "description": "Top floor single overlooking the gorge"
-    },
-    "is_room_listed": true
-}
-```
-
-### 2.2 Update Room Details
-**PATCH** `/api/users/me/room`
-
-Request:
-```json
-{
-    "dorm": "Keeton House",
-    "room_number": "314",
-    "occupancy": 2,
-    "amenities": ["private bathroom", "lake view"],
-    "description": "Sunny double on 3rd floor"
-}
-```
-
-Response:
-```json
-<HTTP STATUS CODE 200>
-{
-    "dorm": "Keeton House",
-    "room_number": "314",
-    "occupancy": 2,
-    "amenities": ["private bathroom", "lake view"],
-    "description": "Sunny double on 3rd floor",
-    "updated_at": "2025-04-23T19:20:00Z",
-    "is_room_listed": true
-}
-```
-
-### 2.3 Toggle Room Listing
-**PATCH** `/api/users/me/room/visibility`
-
-Request:
-```json
-{
-    "is_room_listed": false
-}
-```
-
-Response:
-```json
-<HTTP STATUS CODE 200>
-{
-    "is_room_listed": false,
-    "updated_at": "2025-04-23T19:20:00Z"
-}
-```
-
-### 2.4 Browse Available Rooms
-**GET** `/api/rooms`
-
-Response:
-```json
-<HTTP STATUS CODE 200>
-{
-    "rooms": [
-        {
-            "dorm": "Flora Rose House",
-            "room_number": "042",
-            "occupancy": 2,
-            "amenities": ["grass outside my room"],
-            "description": "Sunny double on 3rd floor",
-            "owner": {
-                "full_name": "Bob Ross",
-                "class_year": 2027
-            }
-        }
-    ],
-    "total": 87
-}
-```
-
-Note: Only returns rooms where `is_room_listed` is true
-
-# Retired Routes (No longer in service)
-
-### 1.1 Cornell Authentication
-**GET** `/api/auth/cornell`
-- Redirects to Cornell Google OAuth consent screen
-- Automatically restricts to @cornell.edu domain
-- Handles both new and returning users
-
-**POST** `/api/auth/cornell/callback`
-Request (Only required for new users):
-```json
-{
-    "class_year": 2028,
-    "current_room": {
-        "dorm": "Keeton House",
-        "room_number": "314",
-        "occupancy": 2,
-        "amenities": ["private bathroom", "lake view"],
-        "description": "Sunny double on 3rd floor"
-    },
-    "is_room_listed": false
-}
-
+After that, include the JWT in every request:
 
 ```
-
-Response (New User):
-```json
-<HTTP STATUS CODE 201>
-{
-    "token": "<jwt>",
-    "user": {
-        "id": "uuid",
-        "email": "bc44@cornell.edu",
-        "full_name": "Bombardino Crocodilo",  // from Google OAuth
-        "class_year": 2028,
-        "created_at": "2025-04-23T19:15:00Z",
-        "current_room": {
-            "dorm": "Keeton House",
-            "room_number": "314",
-            "occupancy": 2,
-            "amenities": ["private bathroom", "lake view"],
-            "description": "Sunny double on 3rd floor"
-        },
-        "is_room_listed": false
-    }
-}
+Authorization: Bearer <jwt>
 ```
 
-Response (Returning User):
-```json
-<HTTP STATUS CODE 200>
-{
-    "token": "<jwt>",
-    "user": {
-        "id": "uuid",
-        "email": "bc44@cornell.edu",
-        "full_name": "Bombardino Crocodilo",
-        "class_year": 2025,
-        "current_room": {
-            "dorm": "Keeton House",
-            "room_number": "314",
-            "occupancy": 2,
-            "amenities": ["private bathroom", "lake view"],
-            "description": "Sunny double on 3rd floor"
-        },
-        "is_room_listed": false
-    }
-}
-```
+---
 
-Note: System determines if user is new based on Cornell email from OAuth. New users must provide additional information in callback request.
+## Models
 
-### 1.2 Register User
-**POST** `/api/auth/register`
+| Model | Key Attributes / Relations |
+|-------|----------------------------|
+| **User** | `id`, `email`, `full_name`, `class_year`, `is_room_listed`<br>– 1:1 with **Room**<br>– many:many with **Room** via `saved_rooms`<br>– 1:Many knocks_sent / knocks_received |
+| **Room** | `id`, `dorm`, `room_number`, `occupancy`, `amenities[]`, `description`<br>– Foreign Key owner_id → User |
+| **Knock** | Swap request: `from_user_id → User`, `to_room_id → Room`, `status`, `accepted_at` |
+| **saved_rooms** | Join table for User ↔ Room |
 
-Request:
-```json
-{
-    "email": "tt6699@cornell.edu",
-    "full_name": "Tralalero Tralala",
-    "class_year": 2028,
-    "current_room": {
-        "dorm": "Keeton House",
-        "room_number": "314",
-        "occupancy": 2,
-        "amenities": ["private bathroom", "lake view"],
-        "description": "Sunny double on 3rd floor"
-    },
-    "is_room_listed": false
-}
-```
+---
 
-Response:
-```json
-<HTTP STATUS CODE 201>
-{
-    "token": "<jwt>",
-    "user": {
-        "id": "uuid",
-        "email": "tt6699@cornell.edu",
-        "full_name": "Tralalero Tralala",
-        "class_year": 2027,
-        "created_at": "2025-04-23T19:15:00Z",
-        "current_room": {
-            "dorm": "Keeton House",
-            "room_number": "314",
-            "occupancy": 2,
-            "amenities": ["private bathroom", "lake view"],
-            "description": "Sunny double on 3rd floor"
-        },
-        "is_room_listed": false
-    }
-}
-```
+## REST Endpoints
+
+| Verb       | Path                              | Purpose                                                          |
+| ---------- | --------------------------------- | ---------------------------------------------------------------- |
+| **POST**   | `/auth/verify_id_token`           | Exchange Google ID-token → JWT (public)                          |
+| **POST**   | `/auth/register`                  | Dev-only fake signup (no OAuth)                                  |
+| **GET**    | `/users/me`                       | Current profile (+ room)                                         |
+| **PATCH**  | `/users/me/room`                  | Create/update your room (auto-lists)                             |
+| **PATCH**  | `/users/me/room/visibility`       | Toggle `is_room_listed`                                          |
+| **GET**    | `/rooms`                          | Browse all listed rooms (excluding your own)                     |
+| **GET**    | `/rooms/{room_id}`                | Fetch one room (listed or your own)                              |
+| **GET**    | `/recommendations`                | Ranked rooms by amenities & occupancy similarity                 |
+| **POST**   | `/knocks`                         | Send knock `{ "to_room_id": <id> }` – auto-accepts if reciprocal |
+| **GET**    | `/knocks/sent`                    | Knocks you have sent                                             |
+| **GET**    | `/knocks/received`                | Knocks on **your** room                                          |
+| **PATCH**  | `/knocks/{id}`                    | Accept a knock `{ "status": "accepted" }`                        |
+| **DELETE** | `/knocks/{id}`                    | Cancel sent or reject received                                   |
+| **POST**   | `/users/me/saved_rooms`           | Save room `{ "room_id": <id> }`                                  |
+| **GET**    | `/users/me/saved_rooms`           | List saved rooms                                                 |
+| **DELETE** | `/users/me/saved_rooms/{room_id}` | Un-save room                                                     |
+> **All routes except** `/auth/*` **and** `/` **require the JWT header.**
+
+## Knock Workflow
+
+1. **Alice** posts `/knocks` → Bob’s room → **pending**
+2. **Bob** posts `/knocks` → Alice’s room → both auto-**accepted**, returns `contacts` emails
+3. **Eva** (Evesdropper inspired by CS 4820) doesn't see this interaction.
+4. Manual accept: room owner `PATCH /knocks/{id}`.
