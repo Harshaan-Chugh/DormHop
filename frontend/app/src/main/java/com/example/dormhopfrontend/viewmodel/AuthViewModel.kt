@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.dormhopfrontend.model.ApiService
+import com.example.dormhopfrontend.model.UserDto
 import com.example.dormhopfrontend.model.VerifyRequest
 import com.example.dormhopfrontend.model.network.TokenManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -29,6 +30,13 @@ class AuthViewModel @Inject constructor(
     private val _jwt = MutableStateFlow<String?>(null)
     val jwt: StateFlow<String?> = _jwt.asStateFlow()
 
+    /* ───── Profile & onboarding flag ───── */
+    private val _user         = MutableStateFlow<UserDto?>(null)
+    val user: StateFlow<UserDto?> = _user.asStateFlow()
+
+    private val _needsProfile = MutableStateFlow(false)
+    val needsProfile: StateFlow<Boolean> = _needsProfile.asStateFlow()
+
     /**
      * Called when user selects a Google account and ID token is obtained.
      */
@@ -49,9 +57,36 @@ class AuthViewModel @Inject constructor(
                     tokenManager.token = body.token
                 }
             } else {
-                // TODO: handle error state
+                // BACKEND REJECTED YOUR ID TOKEN → RESET TO PHASE 1
+                Log.w("AuthVM", "Invalid ID token, resetting back to registration")
+                _googleIdToken.value = null
             }
         }
+    }
+
+    /** Exchange Google-token → JWT, persist, then pull profile. */
+    fun pullProfile() {
+        viewModelScope.launch {
+            val resp = api.getProfile()
+            if (resp.isSuccessful) {
+                resp.body()?.let { profile ->
+                    _user.value = profile
+                    /* need profile if no dorm yet */
+                    _needsProfile.value = profile.currentRoom == null
+                }
+            } else {
+                Log.e("AuthVM", "getProfile failed: ${resp.code()}")
+            }
+        }
+    }
+
+    /** Convenience: wipe state so UI returns to RegistrationScreen. */
+    private fun resetAuth() {
+        _googleIdToken.value = null
+        _jwt.value           = null
+        _user.value          = null
+        _needsProfile.value  = false
+        tokenManager.token   = null
     }
 }
 

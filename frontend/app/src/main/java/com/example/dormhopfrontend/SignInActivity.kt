@@ -66,6 +66,7 @@ class SignInActivity {
                         FirebaseAuth.getInstance().signInWithCredential(firebaseCred).await()
                         // Finally call your callback so the UI can move on
                         login(idToken)
+                        Log.d("SignInActivity", "raw Google ID token: $idToken")
                     } else {
                         Toast
                             .makeText(context, "⚠️ No ID token in credential", Toast.LENGTH_LONG)

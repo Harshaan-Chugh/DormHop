@@ -26,61 +26,6 @@ import com.example.dormhopfrontend.viewmodel.SearchViewModel
 /** Represents a single dorm listing */
 data class DormItem(val title: String, val address: String)
 
-// Sample placeholders for UI consistency
-private val sampleRooms = listOf(
-    RoomDto(
-        id = -1,
-        dorm = "McFaddin Hall, West Campus",
-        roomNumber = "488",
-        occupancy = 1,
-        amenities = listOf("Air Conditioning", "High-Speed WiFi"),
-        description = "Cozy single with a west-facing view",
-        createdAt = "04/01/2025",
-        updatedAt = "04/30/2025",
-        isRoomListed = true,
-        owner = OwnerDto(
-            id = 201,
-            email = "john.doe@cornell.edu",
-            fullName = "John Doe",
-            classYear = 2027
-        )
-    ),
-    RoomDto(
-        id = -2,
-        dorm = "McFaddin Hall, West Campus",
-        roomNumber = "422",
-        occupancy = 2,
-        amenities = listOf("Shared Bathroom", "Heating"),
-        description = null,
-        createdAt = "03/15/2025",
-        updatedAt = "04/15/2025",
-        isRoomListed = false,
-        owner = OwnerDto(
-            id = 202,
-            email = "jane.smith@cornell.edu",
-            fullName = "Jane Smith",
-            classYear = 2026
-        )
-    ),
-    RoomDto(
-        id = -3,
-        dorm = "Carl Becker House, North Campus",
-        roomNumber = "563",
-        occupancy = 3,
-        amenities = listOf("Mini Kitchenette", "In-unit Laundry"),
-        description = "Spacious triple with kitchenette",
-        createdAt = "02/10/2025",
-        updatedAt = "04/10/2025",
-        isRoomListed = true,
-        owner = OwnerDto(
-            id = 203,
-            email = "alex.lee@cornell.edu",
-            fullName = "Alex Lee",
-            classYear = 2025
-        )
-    )
-)
-
 @Composable
 fun RoomCard(
     room: RoomDto,
@@ -98,7 +43,8 @@ fun RoomCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick(room) },
+            .clickable { onClick(room) }
+            .background(Color(0x22A34635)),
         shape = MaterialTheme.shapes.medium,
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
@@ -136,22 +82,7 @@ fun SearchScreen(
     onRoomClick: (RoomDto) -> Unit
 ) {
     val filterQuery by viewModel.query.collectAsState()
-    val dynamicRooms by viewModel.rooms.collectAsState()
-
-    // Combine sample data and real data
-    val allRooms = remember(filterQuery, dynamicRooms) {
-        sampleRooms + dynamicRooms
-    }
-
-    // Apply filter to the combined list
-    val filteredRooms = remember(filterQuery, allRooms) {
-        if (filterQuery.isBlank()) allRooms
-        else allRooms.filter { room ->
-            room.dorm.contains(filterQuery, ignoreCase = true)
-                    || room.roomNumber.contains(filterQuery, ignoreCase = true)
-                    || room.amenities.any { it.contains(filterQuery, ignoreCase = true) }
-        }
-    }
+    val filteredRooms by viewModel.rooms.collectAsState()
 
     Column(Modifier.fillMaxSize()) {
         OutlinedTextField(
@@ -183,6 +114,7 @@ fun SearchScreen(
             items(filteredRooms) { room ->
                 RoomCard(room) { onRoomClick(it) }
             }
+
             item {
                 Button(
                     onClick = { /* TODO: load more dorms */ },

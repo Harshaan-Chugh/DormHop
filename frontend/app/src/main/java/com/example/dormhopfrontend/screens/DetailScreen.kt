@@ -30,8 +30,8 @@ import com.example.dormhopfrontend.viewmodel.DetailViewModel
 @Composable
 fun DetailScreen(
     roomId: Int,
+    viewModel: DetailViewModel = hiltViewModel(),
     onBack: () -> Unit = {},
-    viewModel: DetailViewModel = hiltViewModel()
 ) {
     val roomState = viewModel.room.collectAsState(initial = null)
     val room = roomState.value
@@ -81,6 +81,7 @@ fun DetailScreen(
                         1 -> "Single Dormitory"
                         2 -> "Double Dormitory"
                         3 -> "Triple Dormitory"
+
                         else -> "${room.occupancy}-Person Dormitory"
                     }
                     Text(
@@ -91,10 +92,27 @@ fun DetailScreen(
 
                     // Room and Dorm info
                     Text(
-                        text = "${room.dorm} #${room.roomNumber}",
+                        text = "${room.dorm} ${room.roomNumber}",
                         style = MaterialTheme.typography.bodyMedium
                     )
                     Spacer(Modifier.height(8.dp))
+
+                    // Amenities as simple list
+                    if (room.amenities.isNotEmpty()) {
+                        Text("Amenities:", style = MaterialTheme.typography.titleSmall)
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            room.amenities.forEach { amenity ->
+                                Text("• $amenity", style = MaterialTheme.typography.bodyMedium)
+                            }
+                        }
+                    }
+
+                    // Description
+                    room.description?.takeIf { it.isNotBlank() }?.let { desc ->
+                        Spacer(Modifier.height(8.dp))
+                        Text("Description:", style = MaterialTheme.typography.titleSmall)
+                        Text(desc, style = MaterialTheme.typography.bodyMedium)
+                    }
 
                     Spacer(Modifier.height(16.dp))
                     // TODO: add "Send Knock" or other actions
