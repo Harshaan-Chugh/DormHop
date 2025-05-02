@@ -13,6 +13,14 @@ data class RoomsResponse(
 )
 
 /**
+ * Response wrapper for the user's saved‐rooms endpoint.
+ */
+data class SavedRoomsResponse(
+    @SerializedName("saved_rooms")
+    val savedRooms: List<RoomDto>
+)
+
+/**
  * Request body for Google ID token verification.
  */
 data class VerifyRequest(
@@ -52,6 +60,15 @@ data class VisibilityResponse(
     @SerializedName("is_room_listed") val isRoomListed: Boolean,
     @SerializedName("updated_at") val updatedAt: String
 )
+
+/**
+ * Body for adding/removing a saved room.
+ */
+data class RoomIdRequest(
+    @SerializedName("room_id")
+    val roomId: Int
+)
+
 
 interface ApiService {
     /**
@@ -102,4 +119,16 @@ interface ApiService {
     suspend fun setVisibility(
         @Body body: VisibilityRequest
     ): Response<VisibilityResponse>
+
+    /**
+     * Saved Room Endpoints
+     */
+    @GET("users/me/saved_rooms/")
+    suspend fun listSavedRooms(): Response<SavedRoomsResponse>
+
+    @DELETE("users/me/saved_rooms/{room_id}/")
+    suspend fun unsaveRoom(@Path("room_id") roomId: Int): Response<Unit>
+
+    @POST("users/me/saved_rooms/")
+    suspend fun saveRoom(@Body req: RoomIdRequest): Response<Unit>
 }

@@ -2,8 +2,10 @@ package com.example.dormhopfrontend.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.dormhopfrontend.model.ApiService
 import com.example.dormhopfrontend.model.RoomRepository
 import com.example.dormhopfrontend.model.RoomDto
+import com.example.dormhopfrontend.model.UserDto
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -53,7 +55,8 @@ private data class DormInfo(
 
 @HiltViewModel
 class CreateProfileViewModel @Inject constructor(
-    private val repo: RoomRepository
+    private val repo: RoomRepository,
+    private val api: ApiService
 ) : ViewModel() {
 
     private val _step         = MutableStateFlow(1)
@@ -72,6 +75,35 @@ class CreateProfileViewModel @Inject constructor(
     private val _saving       = MutableStateFlow(false)
     private val _error        = MutableStateFlow<String?>(null)
     private val _done         = MutableStateFlow(false)
+
+    // Load previous info if possible
+    init {
+        // load existing profile & room once at startup
+        viewModelScope.launch {
+            val resp = api.getProfile()
+            if (resp.isSuccessful) {
+                val user: UserDto = resp.body()!!
+                _fullName.value     = user.fullName
+                _email.value        = user.email
+                _classYear.value    = user.classYear.toString()
+                _isRoomListed.value = user.isRoomListed
+
+                user.currentRoom?.let { room ->
+                    _dorm.value       = room.dorm
+                    _roomNumber.value = room.roomNumber
+                    _occupancy.value  = when (room.occupancy) {
+                        1 -> "Single"
+                        2 -> "Double"
+                        3 -> "Triple"
+                        4 -> "Quad"
+                        else -> room.occupancy.toString()
+                    }
+                    _amenities.value  = room.amenities
+                    _description.value= room.description.orEmpty()
+                }
+            }
+        }
+    }
 
     // 1) personalInfo (screen 1)
     private val personalInfo: Flow<PersonalInfo> = combine(

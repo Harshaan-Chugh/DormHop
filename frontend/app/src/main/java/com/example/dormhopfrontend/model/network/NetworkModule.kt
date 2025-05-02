@@ -13,9 +13,17 @@ import javax.inject.Singleton
 @Module @InstallIn(SingletonComponent::class)
 object NetworkModule {
     @Provides @Singleton
-    fun provideOkHttpClient(authInterceptor: AuthInterceptor): OkHttpClient =
+    fun provideOkHttpClient(tokenManager: TokenManager): OkHttpClient =
         OkHttpClient.Builder()
-            .addInterceptor(authInterceptor)
+            .addInterceptor { chain ->
+                val req = chain.request()
+                    .newBuilder()
+                    .apply {
+                        tokenManager.token?.let { header("Authorization", "Bearer $it") }
+                    }
+                    .build()
+                chain.proceed(req)
+            }
             .build()
 
     @Provides @Singleton

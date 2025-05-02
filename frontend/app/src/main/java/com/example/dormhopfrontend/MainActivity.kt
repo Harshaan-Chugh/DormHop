@@ -36,6 +36,7 @@ import com.example.dormhopfrontend.viewmodel.AuthViewModel
 import com.example.dormhopfrontend.ui.theme.DormHopFrontendTheme
 import dagger.hilt.android.AndroidEntryPoint
 import com.example.dormhopfrontend.screens.CreateProfileScreen
+import com.example.dormhopfrontend.screens.SavedScreen
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -139,7 +140,11 @@ private fun MainScaffold(needsProfile: Boolean) {
                     }
                 }
 
-                composable("saved")    { PlaceholderScreen("Saved Dorms")  }
+                composable("saved") {
+                    SavedScreen { roomId ->
+                        navController.navigate("detail/$roomId")
+                    }
+                }
                 composable("inbox")    { PlaceholderScreen("Inbox")       }
 
                 composable("detail/{roomId}",

@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,7 +24,9 @@ import kotlinx.coroutines.launch
 @Composable
 fun RoomCard(
     room: RoomDto,
-    onClick: (RoomDto) -> Unit
+    isSaved: Boolean,
+    onClick: (RoomDto) -> Unit,
+    onSaveClick: (RoomDto) -> Unit
 ) {
     val occupancyLabel = when (room.occupancy) {
         1 -> "Single Dormitory"
@@ -33,37 +37,50 @@ fun RoomCard(
     }
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick(room) },
-        shape = MaterialTheme.shapes.medium,
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFF8F0EE) // Light red tint instead of using background modifier
-        )
+        modifier = Modifier.fillMaxWidth(),
+        shape    = MaterialTheme.shapes.medium,
+        elevation= CardDefaults.cardElevation(4.dp),
+        colors   = CardDefaults.cardColors(containerColor = Color(0xFFF8F0EE))
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Box(
+        Box {
+            // 1) The main tappable area
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(120.dp)
-                    .background(Color.LightGray)
-            )
-            Spacer(Modifier.height(8.dp))
-
-            Text(occupancyLabel, style = MaterialTheme.typography.titleMedium)
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = "${room.roomNumber} ${room.dorm}",
-                style = MaterialTheme.typography.bodyMedium
-            )
-
-            Spacer(Modifier.height(8.dp))
-            Button(
-                onClick = { /* TODO: send a knock */ },
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                    .clickable { onClick(room) }
+                    .padding(16.dp)
             ) {
-                Text("👋 Send a knock", style = MaterialTheme.typography.labelLarge)
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(120.dp)
+                        .background(Color.LightGray)
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(occupancyLabel, style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(4.dp))
+                Text("${room.roomNumber} ${room.dorm}", style = MaterialTheme.typography.bodyMedium)
+                Spacer(Modifier.height(8.dp))
+                Button(
+                    onClick = { /* send knock… */ },
+                    contentPadding = PaddingValues(12.dp, 4.dp)
+                ) {
+                    Text("👋 Send a knock", style = MaterialTheme.typography.labelLarge)
+                }
+            }
+
+            // 2) Heart in the top-right corner, on top of the column
+            IconButton(
+                onClick = { onSaveClick(room) },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(12.dp)
+            ) {
+                Icon(
+                    imageVector = if (isSaved) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                    contentDescription = if (isSaved) "Unsave dorm" else "Save dorm",
+                    tint = if (isSaved) Color.Red else LocalContentColor.current
+                )
             }
         }
     }
@@ -131,6 +148,7 @@ fun SearchScreen(
     // --- hoist all flows into Compose state ---
     val query by viewModel.query.collectAsState()
     val rooms by viewModel.rooms.collectAsState()
+    val savedIds by viewModel.savedIds.collectAsState()
     val selectedOccs by viewModel.selectedOccupancies.collectAsState()
     val selectedCampuses by viewModel.selectedCampuses.collectAsState()
 
@@ -177,7 +195,12 @@ fun SearchScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(rooms) { room ->
-                    RoomCard(room) { onRoomClick(room) }
+                    RoomCard(
+                        room       = room,
+                        isSaved    = room.id in savedIds,
+                        onClick    = { onRoomClick(room) },
+                        onSaveClick= { viewModel.toggleSave(room) }
+                    )
                 }
                 item {
                     Button(
