@@ -138,7 +138,7 @@ private fun MainScaffold(authVM: AuthViewModel) {
             ) {
                 CreateProfileScreen {
                     // go back to posting without creating a new stack entry
-                    navController.popBackStack("posting", inclusive = false)
+                    navController.popBackStack()
                 }
             }
 

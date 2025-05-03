@@ -60,22 +60,22 @@ class CreateProfileViewModel @Inject constructor(
     private val api: ApiService
 ) : ViewModel() {
 
-    private val _step         = MutableStateFlow(1)
+    private val _step = MutableStateFlow(1)
 
-    private val _fullName     = MutableStateFlow("")
-    private val _email        = MutableStateFlow("")
-    private val _classYear    = MutableStateFlow<String?>(null)
+    private val _fullName = MutableStateFlow("")
+    private val _email = MutableStateFlow("")
+    private val _classYear = MutableStateFlow<String?>(null)
     private val _isRoomListed = MutableStateFlow(false)
 
-    private val _dorm         = MutableStateFlow("")
-    private val _roomNumber   = MutableStateFlow("")
-    private val _occupancy    = MutableStateFlow<String?>(null)
-    private val _amenities    = MutableStateFlow<List<String>>(emptyList())
-    private val _description  = MutableStateFlow("")
+    private val _dorm = MutableStateFlow("")
+    private val _roomNumber = MutableStateFlow("")
+    private val _occupancy = MutableStateFlow<String?>(null)
+    private val _amenities = MutableStateFlow<List<String>>(emptyList())
+    private val _description = MutableStateFlow("")
 
-    private val _saving       = MutableStateFlow(false)
-    private val _error        = MutableStateFlow<String?>(null)
-    private val _done         = MutableStateFlow(false)
+    private val _saving = MutableStateFlow(false)
+    private val _error = MutableStateFlow<String?>(null)
+    private val _done = MutableStateFlow(false)
 
     // Load previous info if possible
     init {
@@ -84,23 +84,23 @@ class CreateProfileViewModel @Inject constructor(
             val resp = api.getProfile()
             if (resp.isSuccessful) {
                 val user: UserDto = resp.body()!!
-                _fullName.value     = user.fullName
-                _email.value        = user.email
-                _classYear.value    = user.classYear.toString()
+                _fullName.value = user.fullName
+                _email.value = user.email
+                _classYear.value = user.classYear.toString()
                 _isRoomListed.value = user.isRoomListed
 
                 user.currentRoom?.let { room ->
-                    _dorm.value       = room.dorm
+                    _dorm.value = room.dorm
                     _roomNumber.value = room.roomNumber
-                    _occupancy.value  = when (room.occupancy) {
+                    _occupancy.value = when (room.occupancy) {
                         1 -> "Single"
                         2 -> "Double"
                         3 -> "Triple"
                         4 -> "Quad"
                         else -> room.occupancy.toString()
                     }
-                    _amenities.value  = room.amenities
-                    _description.value= room.description.orEmpty()
+                    _amenities.value = room.amenities
+                    _description.value = room.description.orEmpty()
                 }
             }
         }
@@ -129,28 +129,28 @@ class CreateProfileViewModel @Inject constructor(
         _error
     ) { step, personal, dorm, saving, error ->
         UiState(
-            step               = step,
+            step = step,
 
-            fullName           = personal.fullName,
-            email              = personal.email,
-            classYear          = personal.classYear,
-            isRoomListed       = personal.isRoomListed,
+            fullName = personal.fullName,
+            email = personal.email,
+            classYear = personal.classYear,
+            isRoomListed = personal.isRoomListed,
             canProceedPersonal = personal.fullName.isNotBlank()
                     && personal.email.isNotBlank()
                     && personal.classYear != null,
 
-            dorm               = dorm.dorm,
-            roomNumber         = dorm.roomNumber,
-            occupancy          = dorm.occupancy,
-            amenities          = dorm.amenities,
-            description        = dorm.description,
-            canProceedDorm     = dorm.dorm.isNotBlank()
+            dorm = dorm.dorm,
+            roomNumber = dorm.roomNumber,
+            occupancy = dorm.occupancy,
+            amenities = dorm.amenities,
+            description = dorm.description,
+            canProceedDorm = dorm.dorm.isNotBlank()
                     && dorm.roomNumber.isNotBlank()
                     && dorm.occupancy != null,
 
-            saving             = saving,
-            error              = error,
-            done               = false  // not set yet
+            saving = saving,
+            error = error,
+            done = false  // not set yet
         )
     }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UiState())
@@ -165,21 +165,26 @@ class CreateProfileViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UiState())
 
     /** Personal step setters **/
-    fun onFullNameChanged(fn: String){
-        _fullName.value     = fn
+    fun onFullNameChanged(fn: String) {
+        _fullName.value = fn
     }
-    fun onEmailChanged(em: String){
-        _email.value        = em
+
+    fun onEmailChanged(em: String) {
+        _email.value = em
     }
-    fun onClassYearChanged(cy: String?){
+
+    fun onClassYearChanged(cy: String?) {
         _classYear.value = cy
     }
-    fun onIsRoomListedChanged(v: Boolean){
+
+    fun onIsRoomListedChanged(v: Boolean) {
         _isRoomListed.value = v
     }
+
     fun onNextPersonal() {
         _step.value = 2
     }
+
     fun onBackToPersonal() {
         _step.value = 1
     }
@@ -188,18 +193,23 @@ class CreateProfileViewModel @Inject constructor(
     fun onDormChanged(d: String) {
         _dorm.value = d
     }
+
     fun onRoomNumberChanged(r: String) {
         _roomNumber.value = r
     }
+
     fun onOccupancyChanged(o: String?) {
         _occupancy.value = o
     }
+
     fun addAmenity(a: String) {
         _amenities.value = _amenities.value + a
     }
+
     fun removeAmenity(a: String) {
         _amenities.value = _amenities.value - a
     }
+
     fun onDescriptionChanged(d: String) {
         _description.value = d
     }
@@ -208,26 +218,27 @@ class CreateProfileViewModel @Inject constructor(
     fun onSave() {
         viewModelScope.launch {
             _saving.value = true
-            _error.value  = null
+            _error.value = null
             try {
                 // map occupancy text → int
                 val occInt = when (_occupancy.value) {
                     "Single" -> 1
                     "Double" -> 2
                     "Triple" -> 3
-                    "Quad"   -> 4
-                    else     -> _occupancy.value?.toIntOrNull() ?: 1
+                    "Quad" -> 4
+                    else -> _occupancy.value?.toIntOrNull() ?: 1
                 }
 
+                // ONLY update the room — no more updateUser() call
                 val result: RoomDto? = repo.updateRoom(
-                    dorm        = _dorm.value,
-                    roomNumber  = _roomNumber.value,
-                    occupancy   = occInt,
-                    amenities   = _amenities.value,
+                    dorm = _dorm.value,
+                    roomNumber = _roomNumber.value,
+                    occupancy = occInt,
+                    amenities = _amenities.value,
                     description = _description.value.ifBlank { null }
                 )
                 if (result != null) {
-                    _done.value = true
+                    _done.value = true   // trigger onDone()
                 } else {
                     _error.value = "Failed to save room"
                 }
@@ -237,4 +248,4 @@ class CreateProfileViewModel @Inject constructor(
             _saving.value = false
         }
     }
-    }
+}
