@@ -24,6 +24,7 @@ fun MyPostingScreen(
     val user     by vm.user.collectAsState()
     val loading  by vm.loading.collectAsState()
     val errorMsg by vm.error.collectAsState()
+    val features by vm.features.collectAsState()
 
     LaunchedEffect(Unit) { vm.refresh() }
 
@@ -32,7 +33,6 @@ fun MyPostingScreen(
             TopAppBar(
                 title = { Text("Your Posting") },
                 actions = {
-                    // edit icon always visible – disable until data is loaded
                     IconButton(
                         onClick = onEdit,
                         enabled = user?.currentRoom != null
@@ -62,7 +62,8 @@ fun MyPostingScreen(
                 val room: RoomDto = user!!.currentRoom!!
                 RoomDetailsContent(
                     room = room,
-                    ownerName  = user!!.fullName,
+                    features = features,
+                    ownerName = user!!.fullName,
                     ownerClass = user!!.classYear
                 )
             }
