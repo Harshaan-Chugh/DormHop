@@ -115,7 +115,7 @@ def verify_id_token():
     user = User.query.filter_by(email=email).first()
     is_new = False
     if not user:
-        user = User(email=email, full_name=full_name, class_year=9999)
+        user = User(email=email, full_name=full_name, class_year=2028)
         db.session.add(user)
         db.session.commit()
         is_new = True
