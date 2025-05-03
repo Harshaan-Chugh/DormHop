@@ -157,7 +157,9 @@ def register_user():
 @app.route("/api/users/me/", methods=["GET"])
 @auth_required
 def get_profile(current_user):
-    """Return the current user’s profile, including room information."""
+    """
+    Return the current user’s profile, including room information.
+    """
     return json.dumps(current_user.serialize()), 200
 
 
