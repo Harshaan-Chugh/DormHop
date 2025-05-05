@@ -1,8 +1,9 @@
 # Cornell DormHop
 ### Cornell-only room-swap app: list your dorm, browse & bookmark listings, and send mutual “knocks” to privately negotiate swaps once both sides agree.
 ### Streamlines the post-selection housing shuffle by matching students quickly and transparently, replacing ad-hoc group chats and scattered online postings with a structured, searchable market.
-
+### Demo Video: https://youtu.be/4a0Fyvim-wQ
 ## General Information
+- **Docker Hub**: https://hub.docker.com/repository/docker/harshaan999/dormhop/tags
 - **Authentication Flow**:
   1. Users sign in through Cornell Google OAuth
   2. After successful OAuth, server generates a JWT for subsequent requests
@@ -67,6 +68,7 @@ Authorization: Bearer <jwt>
 | Verb       | Path                              | Purpose                                                          |
 | ---------- | --------------------------------- | ---------------------------------------------------------------- |
 | **POST**   | `/auth/verify_id_token`           | Exchange Google ID-token → JWT (public)                          |
+| **GET**    | `/dorm_features`                  | Fetch each dorm’s “Community Features” list via scraper          |
 | **POST**   | `/auth/register`                  | Dev-only fake signup (no OAuth)                                  |
 | **GET**    | `/users/me`                       | Current profile (+ room)                                         |
 | **PATCH**  | `/users/me/room`                  | Create/update your room (auto-lists)                             |
