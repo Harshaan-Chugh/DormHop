@@ -1,12 +1,3 @@
-<<<<<<< HEAD
-src/.env
-*.db
-__pycache__/
-.DS_Store
-src/venv/*
-src/instance
-src/venv
-=======
 backend/src/.env
 *.db
 __pycache__/
@@ -15,4 +6,4 @@ backend/src/venv/*
 backend/src/instance
 backend/src/venv
 backend/src/app-smoketest.py
->>>>>>> b415288ab12c93f049217ef3a1cbb40ddf906c9c
+DormHopSmokeTest.postman_collection.json
