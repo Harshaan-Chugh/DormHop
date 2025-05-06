@@ -5,5 +5,4 @@ __pycache__/
 backend/src/venv/*
 backend/src/instance
 backend/src/venv
-backend/src/app-smoketest.py
 DormHopSmokeTest.postman_collection.json
