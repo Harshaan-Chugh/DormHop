@@ -87,7 +87,7 @@ Authorization: Bearer <jwt>
 | **GET**    | `/users/me/saved_rooms`           | List saved rooms                                                 |
 | **DELETE** | `/users/me/saved_rooms/{room_id}` | Un-save room                                                     |
 > **All routes except** `/auth/*` **and** `/` **require the JWT header.**
-
+> [Read the API Specs](APISPECS.md)
 ## Knock Workflow
 
 1. **Alice** posts `/knocks` → Bob’s room → **pending**
