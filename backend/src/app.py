@@ -525,7 +525,13 @@ DORM_URLS: dict[str, str] = {
     "112 Edgemoor":             "https://scl.cornell.edu/residential-life/housing/campus-housing/upper-level-undergraduates/residence-halls/112-edgemoor",
     "Schuyler House":           "https://scl.cornell.edu/residential-life/housing/campus-housing/upper-level-undergraduates/residence-halls/schuyler-house",
     "Sheldon Court":            "https://scl.cornell.edu/residential-life/housing/campus-housing/upper-level-undergraduates/residence-halls/sheldon-court",
-    "109 McGraw Place":         "https://scl.cornell.edu/residential-life/housing/campus-housing/new-transfer-undergraduates/residence-halls/109-mcgraw-place"
+    "109 McGraw Place":         "https://scl.cornell.edu/residential-life/housing/campus-housing/new-transfer-undergraduates/residence-halls/109-mcgraw-place",
+    "Clara Dickson Hall":       "https://scl.cornell.edu/residential-life/housing/campus-housing/first-year-undergraduates/residence-halls/clara-dickson-hall",
+    "Ganendago Hall":           "https://scl.cornell.edu/residential-life/housing/campus-housing/upperlevel-undergraduates/residence-halls/ganedago-hall",
+    "Toni Morrison Hall":       "https://scl.cornell.edu/residential-life/housing/campus-housing/upper-level-undergraduates/residence-halls/toni-morrison-hall",
+    "Townhouse Apartments":     "https://scl.cornell.edu/residential-life/housing/campus-housing/upper-level-undergraduates/residence-halls/townhouse-apartments",
+
+
 }
 
 _FEATURE_CACHE: dict[str, list[str]] = {}
