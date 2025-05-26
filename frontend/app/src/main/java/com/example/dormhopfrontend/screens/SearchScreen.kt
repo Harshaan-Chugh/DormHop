@@ -136,11 +136,22 @@ fun RoomCard(
 private fun FilterSheetContent(
     selectedOccupancies: Set<Int>,
     selectedCampuses: Set<String>,
+    showRecommended: Boolean,
+    onRecommendedToggle: (Boolean)->Unit,
     onOccupancyToggle: (Int, Boolean) -> Unit,
     onCampusToggle: (String, Boolean) -> Unit,
     onApply: () -> Unit
 ) {
     Column(Modifier.padding(16.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Switch(
+                checked = showRecommended,
+                onCheckedChange = onRecommendedToggle
+            )
+            Spacer(Modifier.width(8.dp))
+            Text("Sort by Recommended")
+        }
+        Spacer(Modifier.height(24.dp))
         Text("Filter by occupancy", style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.height(8.dp))
         listOf(1,2,3,4).forEach { occ ->
@@ -183,9 +194,7 @@ private fun FilterSheetContent(
     }
 }
 
-// —————————————————————————————————————————————————————————————
-//  3) The main SearchScreen + ModalBottomSheet for filters
-// —————————————————————————————————————————————————————————————
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
@@ -203,6 +212,8 @@ fun SearchScreen(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope      = rememberCoroutineScope()
     var showFilters by remember { mutableStateOf(false) }
+
+    val showRec        by viewModel.showRecommended.collectAsState()
 
     // knock state
     val knockVm: KnockViewModel = hiltViewModel()
@@ -281,11 +292,13 @@ fun SearchScreen(
             sheetState = sheetState
         ) {
             FilterSheetContent(
-                selectedOccupancies = selectedOccs,
-                selectedCampuses    = selectedCampuses,
-                onOccupancyToggle   = { occ, on -> viewModel.toggleOccupancy(occ, on) },
-                onCampusToggle      = { campus, on -> viewModel.toggleCampus(campus, on) },
-                onApply             = {
+                selectedOccupancies  = selectedOccs,
+                selectedCampuses     = selectedCampuses,
+                showRecommended      = showRec,              // ← pass it in
+                onRecommendedToggle  = { viewModel.setShowRecommended(it) },
+                onOccupancyToggle    = { occ, on -> viewModel.toggleOccupancy(occ, on) },
+                onCampusToggle       = { campus, on -> viewModel.toggleCampus(campus, on) },
+                onApply              = {
                     showFilters = false
                     scope.launch { sheetState.hide() }
                 }
