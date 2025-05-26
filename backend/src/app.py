@@ -522,6 +522,10 @@ DORM_URLS: dict[str, str] = {
     "Mews Hall":                "https://scl.cornell.edu/residential-life/housing/campus-housing/first-year-undergraduates/residence-halls/mews-hall",
     "Ruth Bader Ginsburg Hall": "https://scl.cornell.edu/residential-life/housing/campus-housing/first-year-undergraduates/residence-halls/ruth-bader-ginsburg-hall",
     "William Keeton House":     "https://scl.cornell.edu/residential-life/housing/campus-housing/upper-level-undergraduates/west-campus-house-system/william-keeton-house",
+    "112 Edgemoor":             "https://scl.cornell.edu/residential-life/housing/campus-housing/upper-level-undergraduates/residence-halls/112-edgemoor",
+    "Schuyler House":           "https://scl.cornell.edu/residential-life/housing/campus-housing/upper-level-undergraduates/residence-halls/schuyler-house",
+    "Sheldon Court":            "https://scl.cornell.edu/residential-life/housing/campus-housing/upper-level-undergraduates/residence-halls/sheldon-court",
+    "109 McGraw Place":         "https://scl.cornell.edu/residential-life/housing/campus-housing/new-transfer-undergraduates/residence-halls/109-mcgraw-place"
 }
 
 _FEATURE_CACHE: dict[str, list[str]] = {}
