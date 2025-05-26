@@ -58,7 +58,7 @@ Authorization: Bearer <jwt>
 
 | Model | Key Attributes / Relations |
 |-------|----------------------------|
-| **User** | `id`, `email`, `full_name`, `class_year`, `is_room_listed`<br>– 1:1 with **Room**<br>– many:many with **Room** via `saved_rooms`<br>– 1:Many knocks_sent / knocks_received |
+| **User** | `id`, `email`, `full_name`, `class_year`, `is_room_listed`<br>– 1:1 with **Room**<br>– many:many with **Room** via `saved_rooms`<br>– 1:many knocks_sent / knocks_received |
 | **Room** | `id`, `dorm`, `room_number`, `occupancy`, `amenities[]`, `description`<br>– Foreign Key owner_id → User |
 | **Knock** | Swap request: `from_user_id → User`, `to_room_id → Room`, `status`, `accepted_at` |
 | **saved_rooms** | Join table for User ↔ Room |
@@ -87,7 +87,7 @@ Authorization: Bearer <jwt>
 | **GET**    | `/users/me/saved_rooms`           | List saved rooms                                                 |
 | **DELETE** | `/users/me/saved_rooms/{room_id}` | Un-save room                                                     |
 > **All routes except** `/auth/*` **and** `/` **require the JWT header.**
-
+> [Read the API Specs](APISPECS.md)
 ## Knock Workflow
 
 1. **Alice** posts `/knocks` → Bob’s room → **pending**

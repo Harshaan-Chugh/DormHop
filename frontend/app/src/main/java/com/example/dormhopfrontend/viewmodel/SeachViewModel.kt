@@ -45,7 +45,7 @@ class SearchViewModel @Inject constructor(
         if (showRec) recs else all
     }
 
-    // 2️⃣ stage-two combine: filter that list by your 4 criteria
+    // 2 stage-two combine: filter that list by your 4 criteria
     val rooms: StateFlow<List<RoomDto>> = combine(
         sourceRooms,
         query,
@@ -64,27 +64,25 @@ class SearchViewModel @Inject constructor(
     }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+
     // 4. Saved‐rooms IDs
     private val _savedIds = MutableStateFlow<Set<Int>>(emptySet())
     val savedIds: StateFlow<Set<Int>> = _savedIds.asStateFlow()
 
     init {
         viewModelScope.launch {
-            //load the recommended if applicable
             _allRooms.value         = repo.listRooms()
             _recommendedRooms.value = repo.recommendRooms()
-            // load public listings
-            _allRooms.value = repo.listRooms()
+            _allRooms.value         = repo.listRooms()
 
-            // fetch my saved rooms
+            // fetch saved IDs…
             val resp = api.listSavedRooms()
             if (resp.isSuccessful) {
-                val ids = resp.body()
-                    ?.savedRooms          // <--- use savedRooms
+                _savedIds.value = resp.body()
+                    ?.savedRooms
                     ?.map { it.id }
                     .orEmpty()
                     .toSet()
-                _savedIds.value = ids
             }
         }
     }
