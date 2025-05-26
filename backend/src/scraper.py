@@ -1,4 +1,6 @@
-"""helpers for pulling the Community Features list from Cornell housing pages"""
+"""
+Helpers for pulling the Community Features list from Cornell housing pages.
+"""
 from __future__ import annotations
 import re, requests
 from bs4 import BeautifulSoup
@@ -40,13 +42,12 @@ def scrape_community_features(url: str, timeout: int = 10) -> list[str]:
     # 3. Extract bullet points
     if section.name == "ul":
         raw_items = [li.get_text(strip=True) for li in section.find_all("li")]
-    else:  # <p>
+    else:
         raw_items = [line.strip() for line in section.get_text("\n", strip=True).splitlines()]
 
     # 4. De‑dupe while preserving order
     deduped = list(dict.fromkeys(filter(None, raw_items)))
     return deduped
-
 
 # Testing Blob
 if __name__ == "__main__":

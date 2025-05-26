@@ -115,7 +115,7 @@ def verify_id_token():
     user = User.query.filter_by(email=email).first()
     is_new = False
     if not user:
-        user = User(email=email, full_name=full_name, class_year=9999)
+        user = User(email=email, full_name=full_name, class_year=2028)
         db.session.add(user)
         db.session.commit()
         is_new = True
@@ -157,7 +157,9 @@ def register_user():
 @app.route("/api/users/me/", methods=["GET"])
 @auth_required
 def get_profile(current_user):
-    """Return the current user’s profile, including room information."""
+    """
+    Return the current user’s profile, including room information.
+    """
     return json.dumps(current_user.serialize()), 200
 
 

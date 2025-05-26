@@ -95,9 +95,54 @@ Error Responses:
 }
 ```
 
-## 2. Users & Rooms
+## 2. Web Scraping Dorm Features
 
-### 2.1 Get My Profile
+### 2.1 Get Dorm Features
+**GET** `/api/dorm_features/`
+
+Fetch the "Community Features" list for each dorm by scraping Cornell housing pages.
+
+Headers:
+```http
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI...
+```
+
+Response:
+```json
+<HTTP STATUS CODE 200>
+{
+  "Mews Hall": [
+    "260+ residents",
+    "Study lounges on every floor",
+    "Community kitchen"
+  ],
+  "Alice Cook House": [
+    "West Campus dining nearby",
+    "Common social areas",
+    "Lake views"
+  ],
+  "..."
+}
+```
+
+Error Responses:
+```json
+<HTTP STATUS CODE 401>
+{
+  "error": "Missing Bearer token"
+}
+
+<HTTP STATUS CODE 403>
+{
+  "error": "Cornell account required"
+}
+```
+
+Note: If a dorm's page fails to scrape, its entry will be an empty array.
+
+## 3. Users & Rooms
+
+### 3.1 Get My Profile
 **GET** `/api/users/me`
 
 Returns the full user record including current room information.
@@ -128,7 +173,7 @@ Response:
 }
 ```
 
-### 2.2 Create/Update My Room
+### 3.2 Create/Update My Room
 **PATCH** `/api/users/me/room`
 
 Creates a new room or updates an existing one. Also marks the room as listed.
@@ -173,7 +218,7 @@ Error Response:
 }
 ```
 
-### 2.3 Toggle Room Listing
+### 3.3 Toggle Room Listing
 **PATCH** `/api/users/me/room/visibility`
 
 Controls whether the room appears in public listings.
@@ -208,7 +253,7 @@ Error Response:
 }
 ```
 
-### 2.4 Browse Available Rooms
+### 3.4 Browse Available Rooms
 **GET** `/api/rooms`
 
 Returns all rooms that are marked as listed, except the current user's room.
@@ -240,7 +285,7 @@ Response:
 }
 ```
 
-### 2.5 Get Room by ID
+### 3.5 Get Room by ID
 **GET** `/api/rooms/{room_id}`
 
 Fetches a specific room by ID. The owner can always access their room, but others can only see it if it's publicly listed.
@@ -275,7 +320,7 @@ Error Response:
 }
 ```
 
-### 2.6 Get Recommendations
+### 3.6 Get Recommendations
 **GET** `/api/recommendations`
 
 Returns room recommendations based on the similarity of amenities and occupancy to the user's room.
@@ -316,9 +361,9 @@ Error Response:
 }
 ```
 
-## 3. Knock Workflow
+## 4. Knock Workflow
 
-### 3.1 Send Knock
+### 4.1 Send Knock
 **POST** `/api/knocks`
 
 Sends a swap request ("knock") to another user's room.
@@ -418,7 +463,7 @@ Error Responses:
 }
 ```
 
-### 3.2 List Sent Knocks
+### 4.2 List Sent Knocks
 **GET** `/api/knocks/sent`
 
 Returns all knocks sent by the current user.
@@ -457,7 +502,7 @@ Response:
 }
 ```
 
-### 3.3 List Received Knocks
+### 4.3 List Received Knocks
 **GET** `/api/knocks/received`
 
 Returns all knocks received by the current user's room.
@@ -496,7 +541,7 @@ Response:
 }
 ```
 
-### 3.4 Accept Knock
+### 4.4 Accept Knock
 **PATCH** `/api/knocks/{knock_id}`
 
 Accepts a received knock request, revealing contact information to both parties.
@@ -566,7 +611,7 @@ Error Responses:
 }
 ```
 
-### 3.5 Delete/Cancel/Reject Knock
+### 4.5 Delete/Cancel/Reject Knock
 **DELETE** `/api/knocks/{knock_id}`
 
 Deletes a knock. The sender can cancel their request, or the receiver can reject it.
@@ -597,9 +642,9 @@ Error Responses:
 }
 ```
 
-## 4. Saved Rooms
+## 5. Saved Rooms
 
-### 4.1 Save Room
+### 5.1 Save Room
 **POST** `/api/users/me/saved_rooms`
 
 Adds a room to the user's saved/favorites list.
@@ -643,7 +688,7 @@ Error Responses:
 }
 ```
 
-### 4.2 List Saved Rooms
+### 5.2 List Saved Rooms
 **GET** `/api/users/me/saved_rooms`
 
 Returns all rooms saved by the current user.
@@ -674,7 +719,7 @@ Response:
 }
 ```
 
-### 4.3 Unsave Room
+### 5.3 Unsave Room
 **DELETE** `/api/users/me/saved_rooms/{room_id}`
 
 Removes a room from the user's saved list.
@@ -705,7 +750,7 @@ Error Responses:
 }
 ```
 
-## 5. Health Check
+## 6. Health Check
 **GET** `/api`
 
 Simple health check endpoint to verify API is up and running.
