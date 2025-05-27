@@ -3,6 +3,7 @@ import json
 import math
 from datetime import datetime, timedelta, timezone
 from scraper import scrape_community_features
+from urls import DORM_URLS  # Import from constants instead of defining here
 
 import jwt
 from flask import Flask, request
@@ -503,36 +504,6 @@ def unsave_room(current_user, room_id):
     db.session.commit()
     return json.dumps({"success": True}), 200
 
-DORM_URLS: dict[str, str] = {
-    "Alice Cook House":         "https://scl.cornell.edu/residential-life/housing/campus-housing/upper-level-undergraduates/west-campus-house-system/alice-cook-house",
-    "Balch Hall":               "https://scl.cornell.edu/residential-life/housing/campus-housing/first-year-undergraduates/residence-halls/balch-hall",
-    "Barbara McClintock Hall":  "https://scl.cornell.edu/residential-life/housing/campus-housing/first-year-undergraduates/residence-halls/barbara-mcclintock-hall",
-    "Carl Becker House":        "https://scl.cornell.edu/residential-life/housing/campus-housing/upper-level-undergraduates/west-campus-house-system/carl-becker-house",
-    "Cascadilla Hall":          "https://scl.cornell.edu/residential-life/housing/campus-housing/upper-level-undergraduates/residence-halls/cascadilla-hall",
-    "Clara Dickson Hall":       "https://scl.cornell.edu/residential-life/housing/campus-housing/first-year-undergraduates/residence-halls/clara-dickson-hall",
-    "Court–Kay–Bauer Hall":     "https://scl.cornell.edu/residential-life/housing/campus-housing/first-year-undergraduates/residence-halls/court-kay-bauer-hallhall",
-    "Flora Rose House":         "https://scl.cornell.edu/residential-life/housing/campus-housing/upper-level-undergraduates/west-campus-house-system/flora-rose-house",
-    "Hans Bethe House":         "https://scl.cornell.edu/residential-life/housing/campus-housing/upper-level-undergraduates/west-campus-house-system/hans-bethe-house",
-    "High Rise 5":              "https://scl.cornell.edu/residential-life/housing/campus-housing/first-year-undergraduates/residence-halls/high-rise-5",
-    "Hu Shih Hall":             "https://scl.cornell.edu/residential-life/housing/campus-housing/first-year-undergraduates/residence-halls/hu-shih-hall",
-    "Jameson Hall":             "https://scl.cornell.edu/residential-life/housing/campus-housing/first-year-undergraduates/residence-halls/jameson-hall",
-    "Low Rise 6":               "https://scl.cornell.edu/residential-life/housing/campus-housing/first-year-undergraduates/residence-halls/low-rise-6",
-    "Low Rise 7":               "https://scl.cornell.edu/residential-life/housing/campus-housing/first-year-undergraduates/residence-halls/low-rise-7",
-    "Mary Donlon Hall":         "https://scl.cornell.edu/residential-life/housing/campus-housing/first-year-undergraduates/residence-halls/mary-donlon-hall",
-    "Mews Hall":                "https://scl.cornell.edu/residential-life/housing/campus-housing/first-year-undergraduates/residence-halls/mews-hall",
-    "Ruth Bader Ginsburg Hall": "https://scl.cornell.edu/residential-life/housing/campus-housing/first-year-undergraduates/residence-halls/ruth-bader-ginsburg-hall",
-    "William Keeton House":     "https://scl.cornell.edu/residential-life/housing/campus-housing/upper-level-undergraduates/west-campus-house-system/william-keeton-house",
-    "112 Edgemoor":             "https://scl.cornell.edu/residential-life/housing/campus-housing/upper-level-undergraduates/residence-halls/112-edgemoor",
-    "Schuyler House":           "https://scl.cornell.edu/residential-life/housing/campus-housing/upper-level-undergraduates/residence-halls/schuyler-house",
-    "Sheldon Court":            "https://scl.cornell.edu/residential-life/housing/campus-housing/upper-level-undergraduates/residence-halls/sheldon-court",
-    "109 McGraw Place":         "https://scl.cornell.edu/residential-life/housing/campus-housing/new-transfer-undergraduates/residence-halls/109-mcgraw-place",
-    "Clara Dickson Hall":       "https://scl.cornell.edu/residential-life/housing/campus-housing/first-year-undergraduates/residence-halls/clara-dickson-hall",
-    "Ganendago Hall":           "https://scl.cornell.edu/residential-life/housing/campus-housing/upperlevel-undergraduates/residence-halls/ganedago-hall",
-    "Toni Morrison Hall":       "https://scl.cornell.edu/residential-life/housing/campus-housing/upper-level-undergraduates/residence-halls/toni-morrison-hall",
-    "Townhouse Apartments":     "https://scl.cornell.edu/residential-life/housing/campus-housing/upper-level-undergraduates/residence-halls/townhouse-apartments",
-
-
-}
 
 _FEATURE_CACHE: dict[str, list[str]] = {}
 @app.route("/api/dorm_features/", methods=["GET"])
