@@ -3,7 +3,7 @@ import json
 import math
 from datetime import datetime, timedelta, timezone
 from scraper import scrape_community_features
-from urls import DORM_URLS  # Import from constants instead of defining here
+from urls import DORM_URLS
 
 import jwt
 from flask import Flask, request
@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 
-from db import db, User, Room, Knock
+from db import db, User, Room, Knock, _validate_gender
 
 # Environment
 load_dotenv()
@@ -112,11 +112,12 @@ def verify_id_token():
 
     email = info["email"]
     full_name = info.get("name", "")
+    gender = _validate_gender(data.get("gender", "male"))  # default / override
 
     user = User.query.filter_by(email=email).first()
     is_new = False
     if not user:
-        user = User(email=email, full_name=full_name, class_year=2028)
+        user = User(email=email, full_name=full_name, class_year=2028, gender=gender)
         db.session.add(user)
         db.session.commit()
         is_new = True
@@ -132,22 +133,29 @@ def register_user():
     Dev-only registration that skips Google sign-in.
     """
     data = request.get_json(force=True) or {}
-    required = {"email", "full_name", "class_year"}
+    required = {"email", "full_name", "class_year", "gender"}
     if not required.issubset(data):
-        return json.dumps({"error": "email, full_name, class_year are mandatory"}), 400
+        return json.dumps({"error": "email, full_name, class_year, gender are mandatory"}), 400
     if User.query.filter_by(email=data["email"]).first():
         return json.dumps({"error": "email already registered"}), 400
+
+    try:
+        data["gender"] = _validate_gender(data["gender"])
+    except ValueError as e:
+        return json.dumps({"error": str(e)}), 400
 
     user = User(
         email=data["email"],
         full_name=data["full_name"],
         class_year=data["class_year"],
+        gender=data["gender"],
         is_room_listed=data.get("is_room_listed", False),
     )
     db.session.add(user)
     db.session.flush()
     if (room_data := data.get("current_room")):
         room_data["owner_id"] = user.id
+        room_data["gender"]   = user.gender
         db.session.add(Room(**room_data))
     db.session.commit()
 
@@ -182,8 +190,10 @@ def update_room(current_user):
         r.occupancy   = data["occupancy"]
         r.amenities   = json.dumps(data.get("amenities", []))
         r.description = data.get("description")
+        r.gender      = current_user.gender
     else:
         data["owner_id"] = current_user.id
+        data["gender"]   = current_user.gender
         r = Room(**data)
         db.session.add(r)
         current_user.room = r
@@ -227,6 +237,8 @@ def get_room(current_user, room_id):
         return json.dumps({"error": "Room not found"}), 404
     if room.owner_id != current_user.id and not room.owner.is_room_listed:
         return json.dumps({"error": "Room not found"}), 404
+    if room.gender != current_user.gender and room.owner_id != current_user.id:
+        return json.dumps({"error": "Room not available"}), 403
 
     data = room.serialize()
     data["owner"] = {
@@ -245,7 +257,8 @@ def list_rooms(current_user):
     rooms = (Room.query
               .join(User)
               .filter(User.is_room_listed.is_(True),
-                      User.id != current_user.id)
+                      User.id != current_user.id,
+                      User.gender == current_user.gender)
               .all())
 
     out = []
@@ -273,7 +286,8 @@ def recommend_rooms(current_user):
     rooms = (Room.query
              .filter(Room.owner_id != current_user.id)
              .join(User)
-             .filter(User.is_room_listed.is_(True))
+             .filter(User.is_room_listed.is_(True),
+                     User.gender == current_user.gender)
              .all())
 
     scored = []
@@ -320,6 +334,8 @@ def send_knock(current_user):
         return json.dumps({"error": "Room not found"}), 404
     if room.owner_id == current_user.id:
         return json.dumps({"error": "Cannot knock your own room"}), 400
+    if room.gender != current_user.gender:
+        return json.dumps({"error": "Cannot knock a different‑gender room"}), 403
 
     # ensure we haven't already knocked
     exists = Knock.query.filter_by(
@@ -460,7 +476,7 @@ def save_room(current_user):
         return json.dumps({"error": "room_id required"}), 400
 
     room = Room.query.get(room_id)
-    if not room or not room.owner.is_room_listed:
+    if not room or not room.owner.is_room_listed or room.gender != current_user.gender:
         return json.dumps({"error": "Room not found"}), 404
     if room in current_user.saved_rooms:
         return json.dumps({"error": "Already saved"}), 400
@@ -480,6 +496,8 @@ def list_saved_rooms(current_user):
     """
     output = []
     for room in current_user.saved_rooms:
+        if room.gender != current_user.gender:
+            continue
         data = room.serialize()
         data["owner"] = {
             "full_name": room.owner.full_name,
