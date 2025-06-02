@@ -7,12 +7,12 @@ db = SQLAlchemy()
 
 
 # Gender helpers
-VALID_GENDERS = {"male", "female"}
+VALID_GENDERS = {"male", "female", "other"}  # Added "other"
 
 def _validate_gender(value: str) -> str:
     value = (value or "").lower()
     if value not in VALID_GENDERS:
-        raise ValueError("gender must be 'male' or 'female'")
+        raise ValueError("gender must be 'male', 'female', or 'other'")
     return value
 
 # Saved‐rooms many-to-many table

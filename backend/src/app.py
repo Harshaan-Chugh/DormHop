@@ -252,20 +252,28 @@ def get_room(current_user, room_id):
 @auth_required
 def list_rooms(current_user):
     """
-    Return all listed rooms except the caller’s own room.
+    Return all listed rooms except the caller's own room.
+    Users with 'other' gender can see all rooms, while male/female
+    users only see rooms of their own gender.
     """
-    rooms = (Room.query
-              .join(User)
-              .filter(User.is_room_listed.is_(True),
-                      User.id != current_user.id,
-                      User.gender == current_user.gender)
-              .all())
+    query = Room.query.join(User).filter(
+        User.is_room_listed.is_(True),
+        User.id != current_user.id
+    )
+
+    # Gender filtering
+    if current_user.gender != "other":
+        query = query.filter(User.gender == current_user.gender)
+
+    rooms = query.all()
 
     out = []
     for r in rooms:
         d = r.serialize()
-        d["owner"] = {"full_name": r.owner.full_name,
-                      "class_year": r.owner.class_year}
+        d["owner"] = {
+            "full_name": r.owner.full_name,
+            "class_year": r.owner.class_year
+        }
         out.append(d)
 
     return json.dumps({"rooms": out, "total": len(out)}), 200
@@ -316,9 +324,6 @@ def recommend_rooms(current_user):
 def send_knock(current_user):
     """
     Send a swap request ("knock") to another user's room.
-    If the target room's owner has already knocked on the
-    current_user's room, auto-accept both knocks and return
-    contact info for both parties.
     """
     data = request.get_json(force=True) or {}
     room_id = data.get("to_room_id")
@@ -334,7 +339,10 @@ def send_knock(current_user):
         return json.dumps({"error": "Room not found"}), 404
     if room.owner_id == current_user.id:
         return json.dumps({"error": "Cannot knock your own room"}), 400
-    if room.gender != current_user.gender:
+
+    # Modified gender validation
+    if (current_user.gender != "other" and 
+        room.gender != current_user.gender):
         return json.dumps({"error": "Cannot knock a different‑gender room"}), 403
 
     # ensure we haven't already knocked
