@@ -92,5 +92,5 @@ Authorization: Bearer <jwt>
 
 1. **Alice** posts `/knocks` → Bob’s room → **pending**
 2. **Bob** posts `/knocks` → Alice’s room → both auto-**accepted**, returns `contacts` emails
-3. **Eva** (Evesdropper inspired by CS 4820) doesn't see this interaction.
+3. **Eva** (Evesdropper) doesn't see this interaction.
 4. Manual accept: room owner `PATCH /knocks/{id}`.
