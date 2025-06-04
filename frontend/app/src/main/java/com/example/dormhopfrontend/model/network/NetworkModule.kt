@@ -29,7 +29,7 @@ object NetworkModule {
     @Provides @Singleton
     fun provideRetrofit(client: OkHttpClient): Retrofit =
         Retrofit.Builder()
-            .baseUrl("http://34.86.55.150/api/")   // emulator → your machine
+            .baseUrl("http://34.21.46.20/api/")   // emulator → your machine
             .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()

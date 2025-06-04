@@ -26,8 +26,13 @@ class DetailViewModel @Inject constructor(
     private val _features = MutableStateFlow<List<String>>(emptyList())
     val  features: StateFlow<List<String>> = _features
 
+    private val _isLoadingFeatures = MutableStateFlow(true)
+    val isLoadingFeatures: StateFlow<Boolean> = _isLoadingFeatures
+
+
     /** Called by the screen */
     fun load(roomId: Int) = viewModelScope.launch {
+        _isLoadingFeatures.value = true
         // 1) room itself
         _room.value = rooms.getRoomById(roomId)
 
@@ -39,6 +44,7 @@ class DetailViewModel @Inject constructor(
                 val dorm = _room.value?.dorm
                 _features.value = map[dorm].orEmpty()
             }
+            _isLoadingFeatures.value = false
         }
     }
 }
