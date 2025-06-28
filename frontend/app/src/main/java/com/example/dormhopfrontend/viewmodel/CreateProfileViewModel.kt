@@ -5,14 +5,12 @@ import androidx.lifecycle.viewModelScope
 import com.example.dormhopfrontend.model.ApiService
 import com.example.dormhopfrontend.model.RoomRepository
 import com.example.dormhopfrontend.model.RoomDto
-import com.example.dormhopfrontend.model.UpdateUserRequest
 import com.example.dormhopfrontend.model.UserDto
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-// your full UI state
 data class UiState(
     val step: Int = 1,
 
@@ -21,6 +19,7 @@ data class UiState(
     val email: String = "",
     val classYear: String? = null,
     val isRoomListed: Boolean = false,
+    val gender: String? = null,
     val canProceedPersonal: Boolean = false,
 
     // dorm
@@ -37,15 +36,14 @@ data class UiState(
     val done: Boolean = false
 )
 
-// tiny holder for the personal half
 private data class PersonalInfo(
     val fullName: String,
     val email: String,
     val classYear: String?,
-    val isRoomListed: Boolean
+    val isRoomListed: Boolean,
+    val gender: String?
 )
 
-// tiny holder for the dorm half
 private data class DormInfo(
     val dorm: String,
     val roomNumber: String,
@@ -66,6 +64,7 @@ class CreateProfileViewModel @Inject constructor(
     private val _email = MutableStateFlow("")
     private val _classYear = MutableStateFlow<String?>(null)
     private val _isRoomListed = MutableStateFlow(false)
+    private val _gender = MutableStateFlow<String?>(null)
 
     private val _dorm = MutableStateFlow("")
     private val _roomNumber = MutableStateFlow("")
@@ -77,9 +76,7 @@ class CreateProfileViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     private val _done = MutableStateFlow(false)
 
-    // Load previous info if possible
     init {
-        // load existing profile & room once at startup
         viewModelScope.launch {
             val resp = api.getProfile()
             if (resp.isSuccessful) {
@@ -88,6 +85,7 @@ class CreateProfileViewModel @Inject constructor(
                 _email.value = user.email
                 _classYear.value = user.classYear.toString()
                 _isRoomListed.value = user.isRoomListed
+                _gender.value = user.gender
 
                 user.currentRoom?.let { room ->
                     _dorm.value = room.dorm
@@ -106,21 +104,18 @@ class CreateProfileViewModel @Inject constructor(
         }
     }
 
-    // 1) personalInfo (screen 1)
     private val personalInfo: Flow<PersonalInfo> = combine(
-        _fullName, _email, _classYear, _isRoomListed
-    ) { fn, em, cy, listed ->
-        PersonalInfo(fn, em, cy, listed)
+        _fullName, _email, _classYear, _isRoomListed, _gender
+    ) { fn, em, cy, listed, gender ->
+        PersonalInfo(fn, em, cy, listed, gender)
     }
 
-    // 2) dormInfo (screen 2)
     private val dormInfo: Flow<DormInfo> = combine(
         _dorm, _roomNumber, _occupancy, _amenities, _description
     ) { dorm, rn, occ, ams, desc ->
         DormInfo(dorm, rn, occ, ams, desc)
     }
 
-    // 3) combine the data
     private val partialState: StateFlow<UiState> = combine(
         _step,
         personalInfo,
@@ -135,9 +130,11 @@ class CreateProfileViewModel @Inject constructor(
             email = personal.email,
             classYear = personal.classYear,
             isRoomListed = personal.isRoomListed,
+            gender = personal.gender,
             canProceedPersonal = personal.fullName.isNotBlank()
                     && personal.email.isNotBlank()
-                    && personal.classYear != null,
+                    && personal.classYear != null
+                    && personal.gender != null,
 
             dorm = dorm.dorm,
             roomNumber = dorm.roomNumber,
@@ -150,19 +147,16 @@ class CreateProfileViewModel @Inject constructor(
 
             saving = saving,
             error = error,
-            done = false  // not set yet
+            done = false
         )
-    }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UiState())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UiState())
 
-    // 4) tack on the _done flag – 2‐arg combine
     val uiState: StateFlow<UiState> = combine(
         partialState,
         _done
     ) { partial, done ->
         partial.copy(done = done)
-    }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UiState())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UiState())
 
     /** Personal step setters **/
     fun onFullNameChanged(fn: String) {
@@ -179,6 +173,10 @@ class CreateProfileViewModel @Inject constructor(
 
     fun onIsRoomListedChanged(v: Boolean) {
         _isRoomListed.value = v
+    }
+
+    fun onGenderChanged(g: String?) {
+        _gender.value = g
     }
 
     fun onNextPersonal() {
@@ -220,7 +218,6 @@ class CreateProfileViewModel @Inject constructor(
             _saving.value = true
             _error.value = null
             try {
-                // map occupancy text → int
                 val occInt = when (_occupancy.value) {
                     "Single" -> 1
                     "Double" -> 2
@@ -229,7 +226,6 @@ class CreateProfileViewModel @Inject constructor(
                     else -> _occupancy.value?.toIntOrNull() ?: 1
                 }
 
-                // ONLY update the room — no more updateUser() call
                 val result: RoomDto? = repo.updateRoom(
                     dorm = _dorm.value,
                     roomNumber = _roomNumber.value,
@@ -238,7 +234,7 @@ class CreateProfileViewModel @Inject constructor(
                     description = _description.value.ifBlank { null }
                 )
                 if (result != null) {
-                    _done.value = true   // trigger onDone()
+                    _done.value = true
                 } else {
                     _error.value = "Failed to save room"
                 }

@@ -9,5 +9,6 @@ data class UserDto(
     @SerializedName("class_year")       val classYear: Int,
     @SerializedName("created_at")       val createdAt: String,
     @SerializedName("current_room")     val currentRoom: RoomDto?,     // may be null
-    @SerializedName("is_room_listed")   val isRoomListed: Boolean
+    @SerializedName("is_room_listed")   val isRoomListed: Boolean,
+    @SerializedName("gender")           val gender: String?
 )

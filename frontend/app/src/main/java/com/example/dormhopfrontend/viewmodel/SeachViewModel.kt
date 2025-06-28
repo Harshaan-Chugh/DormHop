@@ -8,14 +8,7 @@ import com.example.dormhopfrontend.model.RoomDto
 import com.example.dormhopfrontend.model.RoomIdRequest
 import com.example.dormhopfrontend.model.RoomRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -32,6 +25,13 @@ class SearchViewModel @Inject constructor(
     val query               = MutableStateFlow("")
     val selectedOccupancies = MutableStateFlow<Set<Int>>(emptySet())
     val selectedCampuses    = MutableStateFlow<Set<String>>(emptySet())
+    private val _genderFilter = MutableStateFlow("Male")
+    val genderFilter: StateFlow<String?> = _genderFilter.asStateFlow()
+
+
+    fun setGenderFilter(gender: String) {
+        _genderFilter.value = gender
+    }
 
     // 2. All loaded rooms
     private val _allRooms = MutableStateFlow<List<RoomDto>>(emptyList())
@@ -45,25 +45,25 @@ class SearchViewModel @Inject constructor(
         if (showRec) recs else all
     }
 
-    // 2 stage-two combine: filter that list by your 4 criteria
+    // Filtered result
     val rooms: StateFlow<List<RoomDto>> = combine(
         sourceRooms,
         query,
         selectedOccupancies,
-        selectedCampuses
-    ) { baseList, q, occs, camps ->
+        selectedCampuses,
+        genderFilter,
+    ) { baseList, q, occs, camps, gender ->
         baseList.filter { room ->
             (occs.isEmpty() || room.occupancy in occs) &&
                     (camps.isEmpty() || room.campus in camps) &&
+                    (gender.isNullOrBlank() || room.userGender?.equals(gender, ignoreCase = true) == true) &&
                     (q.isBlank()
                             || room.dorm.contains(q, ignoreCase = true)
                             || room.roomNumber.contains(q, ignoreCase = true)
                             || room.amenities.any { it.contains(q, ignoreCase = true) }
                             )
         }
-    }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     // 4. Saved‐rooms IDs
     private val _savedIds = MutableStateFlow<Set<Int>>(emptySet())

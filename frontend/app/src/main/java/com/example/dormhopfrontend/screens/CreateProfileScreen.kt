@@ -148,12 +148,55 @@ private fun PersonalStep(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth()
         )
+        GenderDropdown(
+            selected = ui.gender,
+            onSelected = vm::onGenderChanged
+        )
         Row(verticalAlignment = Alignment.CenterVertically) {
             Checkbox(
                 checked = ui.isRoomListed,
                 onCheckedChange = vm::onIsRoomListedChanged
             )
             Text("Make my room visible in search")
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun GenderDropdown(
+    selected: String?,
+    onSelected: (String?) -> Unit
+) {
+    val options = listOf("Male", "Female", "Other")
+    var expanded by remember { mutableStateOf(false) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded },
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        OutlinedTextField(
+            value = selected ?: "",
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Gender") },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+            modifier = Modifier.menuAnchor().fillMaxWidth()
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option) },
+                    onClick = {
+                        onSelected(option)
+                        expanded = false
+                    }
+                )
+            }
         }
     }
 }

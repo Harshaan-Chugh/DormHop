@@ -3,17 +3,19 @@ package com.example.dormhopfrontend.model
 import com.google.gson.annotations.SerializedName
 
 data class RoomDto(
-    @SerializedName("id")            val id: Int,
-    @SerializedName("dorm")          val dorm: String,
-    @SerializedName("room_number")   val roomNumber: String,
-    @SerializedName("occupancy")     val occupancy: Int,
-    @SerializedName("amenities")     val amenities: List<String>,
-    @SerializedName("description")   val description: String?,
-    @SerializedName("created_at")    val createdAt: String,
-    @SerializedName("updated_at")    val updatedAt: String,
-    @SerializedName("is_room_listed")val isRoomListed: Boolean,
-    @SerializedName("owner")         val owner: OwnerDto,
-    @SerializedName("campus")         val campus: String
+    @SerializedName("id")               val id: Int,
+    @SerializedName("dorm")             val dorm: String,
+    @SerializedName("room_number")      val roomNumber: String,
+    @SerializedName("occupancy")        val occupancy: Int,
+    @SerializedName("amenities")        val amenities: List<String>,
+    @SerializedName("description")      val description: String?,
+    @SerializedName("created_at")       val createdAt: String,
+    @SerializedName("updated_at")       val updatedAt: String,
+    @SerializedName("is_room_listed")   val isRoomListed: Boolean,
+    @SerializedName("owner")            val owner: OwnerDto,
+    @SerializedName("campus")           val campus: String,
+    @SerializedName("gender")           val userGender: String?
+
 )
 
 data class OwnerDto(

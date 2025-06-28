@@ -28,27 +28,15 @@ import com.example.dormhopfrontend.viewmodel.KnockViewModel
 import com.example.dormhopfrontend.viewmodel.SearchViewModel
 import kotlinx.coroutines.launch
 
-// —————————————————————————————————————————————————————————————
-//  Utility: turn "Carl Becker House" → R.drawable.carl_becker_house
-//  or fallback to R.drawable.dorm_placeholder
-// —————————————————————————————————————————————————————————————
 @Composable
 @DrawableRes
 private fun RoomDto.toImageRes(): Int {
     val ctx: Context = LocalContext.current
-    // slugify: lowercase, non-alnum → underscore, collapse, trim
-    val slug = dorm
-        .lowercase()
-        .replace(Regex("[^a-z0-9]"), "_")
-        .replace(Regex("_+"), "_")
-        .trim('_')
+    val slug = dorm.lowercase().replace(Regex("[^a-z0-9]"), "_").replace(Regex("_+"), "_").trim('_')
     val id = ctx.resources.getIdentifier(slug, "drawable", ctx.packageName)
     return if (id != 0) id else R.drawable.dorm_placeholder
 }
 
-// —————————————————————————————————————————————————————————————
-//  1) RoomCard shows the dorm image + save & knock controls
-// —————————————————————————————————————————————————————————————
 @Composable
 fun RoomCard(
     room: RoomDto,
@@ -58,7 +46,6 @@ fun RoomCard(
     onSaveClick: (RoomDto) -> Unit,
     onKnockClick: (RoomDto) -> Unit
 ) {
-    // human‐friendly occupancy label
     val occupancyLabel = when (room.occupancy) {
         1 -> "Single Dormitory"
         2 -> "Double Dormitory"
@@ -66,62 +53,53 @@ fun RoomCard(
         4 -> "Quad Dormitory"
         else -> "${room.occupancy}-Person Dormitory"
     }
-    // lookup the drawable (or placeholder)
     val imageRes = room.toImageRes()
 
     Card(
-        modifier  = Modifier
+        modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick(room) },
-        shape     = MaterialTheme.shapes.medium,
+        shape = MaterialTheme.shapes.medium,
         elevation = CardDefaults.cardElevation(4.dp),
-        colors    = CardDefaults.cardColors(containerColor = Color(0xFFF8F0EE))
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F0EE))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // 1) Photo
             Image(
-                painter           = painterResource(id = imageRes),
-                contentDescription= "${room.dorm} photo",
-                contentScale      = ContentScale.Crop,
-                modifier          = Modifier
+                painter = painterResource(id = imageRes),
+                contentDescription = "${room.dorm} photo",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
                     .fillMaxWidth()
                     .height(120.dp)
             )
             Spacer(Modifier.height(8.dp))
-
-            // 2) Occupancy label
             Text(occupancyLabel, style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(4.dp))
-
-            // 3) Dorm name + heart icon
             Row(
-                modifier            = Modifier.fillMaxWidth(),
-                verticalAlignment   = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text  = "${room.roomNumber} ${room.dorm}",
+                    text = "${room.roomNumber} ${room.dorm}",
                     style = MaterialTheme.typography.bodyMedium
                 )
                 IconButton(onClick = { onSaveClick(room) }) {
                     Icon(
-                        imageVector      = if (isSaved) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        imageVector = if (isSaved) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                         contentDescription = if (isSaved) "Unsave dorm" else "Save dorm",
-                        tint             = if (isSaved) Color.Red else LocalContentColor.current
+                        tint = if (isSaved) Color.Red else LocalContentColor.current
                     )
                 }
             }
-
             Spacer(Modifier.height(8.dp))
-
-            // 4) Knock button
             Button(
-                onClick        = { onKnockClick(room) },
-                enabled        = !isKnocked,
+                onClick = { onKnockClick(room) },
+                enabled = !isKnocked,
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
             ) {
                 Text(
-                    text  = if (isKnocked) "Knocked ✔" else "👋 Send a knock",
+                    text = if (isKnocked) "Knocked ✔" else "👋 Send a knock",
                     style = MaterialTheme.typography.labelLarge
                 )
             }
@@ -129,13 +107,45 @@ fun RoomCard(
     }
 }
 
-// —————————————————————————————————————————————————————————————
-//  2) Bottom-sheet filter UI
-// —————————————————————————————————————————————————————————————
+@Composable
+fun DropdownMenuBox(
+    selected: String,
+    options: List<String>,
+    onSelectedChange: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Box {
+        OutlinedTextField(
+            value = selected,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Gender") },
+            modifier = Modifier.fillMaxWidth().clickable { expanded = true }
+        )
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option.ifBlank { "Any" }) },
+                    onClick = {
+                        onSelectedChange(option)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun FilterSheetContent(
     selectedOccupancies: Set<Int>,
     selectedCampuses: Set<String>,
+    selectedGender: String,
+    onGenderSelected: (String) -> Unit,
     showRecommended: Boolean,
     onRecommendedToggle: (Boolean)->Unit,
     onOccupancyToggle: (Int, Boolean) -> Unit,
@@ -161,15 +171,7 @@ private fun FilterSheetContent(
                     onCheckedChange = { onOccupancyToggle(occ, it) }
                 )
                 Spacer(Modifier.width(4.dp))
-                Text(
-                    when (occ) {
-                        1 -> "Single"
-                        2 -> "Double"
-                        3 -> "Triple"
-                        4 -> "Quad"
-                        else -> "$occ-Person"
-                    }
-                )
+                Text(when (occ) { 1 -> "Single"; 2 -> "Double"; 3 -> "Triple"; 4 -> "Quad"; else -> "$occ-Person" })
             }
         }
 
@@ -187,6 +189,15 @@ private fun FilterSheetContent(
             }
         }
 
+        Spacer(Modifier.height(16.dp))
+        Text("Filter by gender", style = MaterialTheme.typography.titleMedium)
+        Spacer(Modifier.height(8.dp))
+        DropdownMenuBox(
+            selected = selectedGender,
+            options = listOf("Male", "Female", "Other"),
+            onSelectedChange = onGenderSelected
+        )
+
         Spacer(Modifier.height(24.dp))
         Button(onClick = onApply, Modifier.fillMaxWidth()) {
             Text("Apply filters")
@@ -194,28 +205,25 @@ private fun FilterSheetContent(
     }
 }
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
     viewModel: SearchViewModel = hiltViewModel(),
     onRoomClick: (RoomDto) -> Unit
 ) {
-    // state from VM
     val query            by viewModel.query.collectAsState()
     val rooms            by viewModel.rooms.collectAsState()
     val savedIds         by viewModel.savedIds.collectAsState()
     val selectedOccs     by viewModel.selectedOccupancies.collectAsState()
     val selectedCampuses by viewModel.selectedCampuses.collectAsState()
+    val selectedGender   by viewModel.genderFilter.collectAsState()
 
-    // bottom‐sheet state
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val scope      = rememberCoroutineScope()
+    val scope = rememberCoroutineScope()
     var showFilters by remember { mutableStateOf(false) }
 
-    val showRec        by viewModel.showRecommended.collectAsState()
+    val showRec by viewModel.showRecommended.collectAsState()
 
-    // knock state
     val knockVm: KnockViewModel = hiltViewModel()
     val sentKnocks by knockVm.sent.collectAsState()
     val knockedIds by remember(sentKnocks) {
@@ -225,57 +233,40 @@ fun SearchScreen(
 
     Scaffold { paddingValues ->
         Column(
-            Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+            Modifier.fillMaxSize().padding(paddingValues)
         ) {
             OutlinedTextField(
-                value         = query,
+                value = query,
                 onValueChange = { viewModel.query.value = it },
-                modifier      = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
-                placeholder   = { Text("Dorm feature, location…") },
-                singleLine    = true,
-                trailingIcon  = {
+                modifier = Modifier.fillMaxWidth().padding(8.dp),
+                placeholder = { Text("Dorm feature, location…") },
+                singleLine = true,
+                trailingIcon = {
                     Icon(
                         Icons.Default.FilterList,
                         contentDescription = "Filter",
-                        modifier = Modifier
-                            .clickable { showFilters = true }
-                            .padding(8.dp)
+                        modifier = Modifier.clickable { showFilters = true }.padding(8.dp)
                     )
                 }
             )
-
             Spacer(Modifier.height(4.dp))
-
             LazyColumn(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
-                contentPadding = PaddingValues(
-                    bottom = 72.dp,
-                    start  = 16.dp,
-                    end    = 16.dp
-                ),
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+                contentPadding = PaddingValues(bottom = 72.dp, start = 16.dp, end = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(rooms) { room ->
                     RoomCard(
-                        room         = room,
-                        isSaved      = room.id in savedIds,
-                        isKnocked    = room.id in knockedIds,
-                        onClick      = { onRoomClick(room) },
-                        onSaveClick  = { viewModel.toggleSave(room) },
+                        room = room,
+                        isSaved = room.id in savedIds,
+                        isKnocked = room.id in knockedIds,
+                        onClick = { onRoomClick(room) },
+                        onSaveClick = { viewModel.toggleSave(room) },
                         onKnockClick = { knockVm.sendKnock(room.id) {} }
                     )
                 }
                 item {
-                    Button(
-                        onClick  = { viewModel.loadMore() },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
+                    Button(onClick = { viewModel.loadMore() }, modifier = Modifier.fillMaxWidth()) {
                         Text("Load more dorms")
                     }
                 }
@@ -292,13 +283,15 @@ fun SearchScreen(
             sheetState = sheetState
         ) {
             FilterSheetContent(
-                selectedOccupancies  = selectedOccs,
-                selectedCampuses     = selectedCampuses,
-                showRecommended      = showRec,              // ← pass it in
-                onRecommendedToggle  = { viewModel.setShowRecommended(it) },
-                onOccupancyToggle    = { occ, on -> viewModel.toggleOccupancy(occ, on) },
-                onCampusToggle       = { campus, on -> viewModel.toggleCampus(campus, on) },
-                onApply              = {
+                selectedOccupancies = selectedOccs,
+                selectedCampuses = selectedCampuses,
+                selectedGender = selectedGender ?: "",
+                onGenderSelected = { viewModel.setGenderFilter(it) },
+                showRecommended = showRec,
+                onRecommendedToggle = { viewModel.setShowRecommended(it) },
+                onOccupancyToggle = { occ, on -> viewModel.toggleOccupancy(occ, on) },
+                onCampusToggle = { campus, on -> viewModel.toggleCampus(campus, on) },
+                onApply = {
                     showFilters = false
                     scope.launch { sheetState.hide() }
                 }
