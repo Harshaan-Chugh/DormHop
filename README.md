@@ -1,7 +1,7 @@
 # Cornell DormHop  
 ### 🏆 Best Overall App — AppDev Hack Challenge (SP25)
 
-Contributors:
+Contributors:  
 Harshaan Chugh  
 George Margono  
 Satria Tjiaman  
