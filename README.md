@@ -1,6 +1,12 @@
 # Cornell DormHop  
 ### 🏆 Best Overall App — AppDev Hack Challenge (SP25)
 
+Contributors:  
+Harshaan Chugh  
+George Margono  
+Satria Tjiaman  
+Alisa Bera  
+
 ### DormHop is Cornell’s first‑and‑only room‑swap platform: list your dorm, browse and bookmark rooms, and send mutual “knocks” to negotiate swaps once both sides agree. It replaces ad‑hoc group chats with a personalized, searchable marketplace that streamlines the post‑selection housing shuffle.
 
 ### Demo Video: https://youtu.be/4a0Fyvim-wQ
