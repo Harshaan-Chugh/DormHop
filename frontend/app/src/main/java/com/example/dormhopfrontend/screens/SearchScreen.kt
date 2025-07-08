@@ -107,6 +107,7 @@ fun RoomCard(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DropdownMenuBox(
     selected: String,
@@ -115,15 +116,22 @@ fun DropdownMenuBox(
 ) {
     var expanded by remember { mutableStateOf(false) }
 
-    Box {
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded }
+    ) {
         OutlinedTextField(
-            value = selected,
-            onValueChange = {},
             readOnly = true,
+            value = selected.ifBlank { "Any" },
+            onValueChange = {},
             label = { Text("Gender") },
-            modifier = Modifier.fillMaxWidth().clickable { expanded = true }
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+            modifier = Modifier
+                .menuAnchor()
+                .fillMaxWidth()
         )
-        DropdownMenu(
+
+        ExposedDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false }
         ) {
@@ -139,6 +147,7 @@ fun DropdownMenuBox(
         }
     }
 }
+
 
 @Composable
 private fun FilterSheetContent(
