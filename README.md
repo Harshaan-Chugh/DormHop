@@ -1,7 +1,10 @@
 # Cornell DormHop  
 ### 🏆 Best Overall App — AppDev Hack Challenge (SP25)
 
-Contributors:  
+## Contributors:  
+<a href="https://github.com/harshaan-chugh/dormhop/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=harshaan-chugh/dormhop" />
+</a>
 Harshaan Chugh  
 George Margono  
 Satria Tjiaman  
@@ -100,7 +103,3 @@ Authorization: Bearer <jwt>
 2. **Bob** posts `/knocks` → Alice’s room → both auto-**accepted**, returns `contacts` emails
 3. **Eva** (Evesdropper) doesn't see this interaction.
 4. Manual accept: room owner `PATCH /knocks/{id}`.
-
-<a href="https://github.com/harshaan-chugh/dormhop/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=harshaan-chugh/dormhop" />
-</a>
