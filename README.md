@@ -2,10 +2,6 @@
 ### 🏆 Best Overall App — AppDev Hack Challenge (SP25)
 
 ## Contributors:  
-<a href="https://github.com/harshaan-chugh/dormhop/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=harshaan-chugh/dormhop" />
-</a>
-
 Harshaan Chugh  
 George Margono  
 Satria Tjiaman  
