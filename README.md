@@ -6,6 +6,11 @@ Harshaan Chugh
 George Margono  
 Satria Tjiaman  
 Alisa Bera  
+<a href="https://github.com/harshaan-chugh/dormhop/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=harshaan-chugh/dormhop" />
+</a>
+
+Made with [contrib.rocks](https://contrib.rocks).
 
 ### DormHop is Cornell’s first‑and‑only room‑swap platform: list your dorm, browse and bookmark rooms, and send mutual “knocks” to negotiate swaps once both sides agree. It replaces ad‑hoc group chats with a personalized, searchable marketplace that streamlines the post‑selection housing shuffle.
 
