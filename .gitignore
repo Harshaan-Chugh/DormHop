@@ -1,3 +1,4 @@
+# Standard stuff
 backend/src/.env
 *.db
 __pycache__/
@@ -6,3 +7,7 @@ backend/src/venv/*
 backend/src/instance
 backend/src/venv
 DormHopSmokeTest.postman_collection.json
+
+# Ignore Gradle wrapper batch scripts
+frontend/wrapper/dists/
+frontend/gradlew.bat
